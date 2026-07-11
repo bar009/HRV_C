@@ -16,6 +16,13 @@ htmlcov/
 *.png
 !docs/**/*.png
 
+# Swift / Xcode
+swift/.build/
+swift/.swiftpm/
+*.xcodeproj/
+DerivedData/
+*.xcuserstate
+
 # OS / editor
 .DS_Store
 Thumbs.db

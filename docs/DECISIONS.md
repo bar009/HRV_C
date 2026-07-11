@@ -14,6 +14,9 @@
 | **D-COH** | מצב מדידה אקטיבי (Coherence)? | **פסיבי-קודם** — Coherence נדחה למודול נפרד עתידי (`hrv_core/coherence/`) | Spec §0.4 |
 | D-OP4 | מקור HRV | Hybrid: SDNN של אפל ראשי, RMSSD מ-RR משני/אופורטוניסטי | Deep Dive A.2 |
 | OP-5 | שיטת סף | robust z-score על `ln(RMSSD)` עם median + MAD | Deep Dive B.3 |
+| Q-C | גרסת iOS מינימלית | **iOS 17 / watchOS 10** → מנוע אחסון **SwiftData** | Deep Dive C.5 |
+| D-BUILD | ייצור פרויקט Xcode | **XcodeGen** (`project.yml` דקלרטיבי, לא `.pbxproj` ידני) | Track G |
+| D-SPLIT | ארכיטקטורת קוד | `HRVCore` (SPM, Foundation בלבד, בר-אימות מחוץ ל-Mac) נפרד מקוד האפליקציה (Xcode) | Track A/G |
 
 ## המלצות פתוחות (לא חוסמות את שלב הליבה)
 
@@ -29,7 +32,7 @@
 |---|--------|--------|----------|
 | Q-A | כמה `HKHeartbeatSeriesSample` מגיעים פסיבית? (נוטה לשלילה) | בדיקת שדה 3–5 ימים על מכשיר אמיתי | האם `RRExtractor` שווה מאמץ (A.2/A.6.1) |
 | Q-B | ערכי `k` / `persistence` / `cooldown` סופיים | הסימולציה נותנת ערכי התחלה; כיול סופי דורש נתונים אמיתיים | לב לוגיקת ההתראה (B.7) |
-| Q-C | גרסת iOS מינימלית נתמכת | פתוח | בחירת מנוע אחסון: SwiftData (17+) מול GRDB (C.5) |
+| Q-C | גרסת iOS מינימלית נתמכת | ✅ נסגר: **iOS 17 → SwiftData** | — |
 
 ## סטטוס מימוש (הליבה הפסיבית ב-Python)
 
@@ -42,4 +45,15 @@
 | Persistence | `InMemoryHRVRepository` (סכמה לוגית C.6) | ✅ מומש |
 | Sim | מחולל סינתטי + `run_scenario` | ✅ מומש |
 | Coherence | מצב אקטיבי / תחום-תדר (D-COH) | ⏸️ נדחה (מכוון) |
-| Native | Xcode / HealthKit / watchOS / Notifications / SwiftData | ⏸️ ממתין ל-Mac |
+
+## סטטוס פורט ה-Swift (`swift/`)
+
+| שכבה | מצב |
+|------|-----|
+| `HRVCore` (Signal/Detection/Persistence) + XCTest | ✅ נכתב (פורט 1:1); `swift test` ממתין ל-toolchain — ראה [workplan/track-G](workplan/track-G-project-setup.md) |
+| App: HealthKit, Coordinator, SwiftData, Notifications, SwiftUI | ✅ נכתב (Mac-only, לא מקומפל עד Mac) |
+| watchOS | 🟡 שלד מינימלי |
+| `project.yml` / `Info.plist` / entitlements | ✅ נכתב |
+| אימות: `swift test` על Windows | ❌ חסום — חסר Windows SDK + MSVC (Swift 6.3.3 מותקן ורץ) |
+
+מסלול העבודה המלא: [`workplan/README.md`](workplan/README.md).

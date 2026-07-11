@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Shared Info.plist keys for the iOS app. HealthKit usage strings must be
+     specific (Deep Dive 1.3.3) -- Apple rejects generic "we need your data". -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>NSHealthShareUsageDescription</key>
+    <string>האפליקציה קוראת דופק ו-HRV כדי לבנות עבורך baseline אישי ולזהות שינוי חריג במנוחה. הנתונים נשארים על המכשיר.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>processing</string>
+    </array>
+    <key>UILaunchScreen</key>
+    <dict/>
+</dict>
+</plist>

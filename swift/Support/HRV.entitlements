@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- HealthKit capability (Deep Dive 1.2). Add background-delivery when enabling
+     HKObserverQuery background wake-ups on a paid developer account. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.developer.healthkit</key>
+    <true/>
+    <key>com.apple.developer.healthkit.background-delivery</key>
+    <true/>
+</dict>
+</plist>
