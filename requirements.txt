@@ -1,0 +1,5 @@
+# hrv_core (the reference implementation) uses the Python standard library only.
+# These are for the tests and the simulation harness.
+numpy>=1.26
+matplotlib>=3.8   # optional — only used by `run_scenario --plot`
+pytest>=8.0
