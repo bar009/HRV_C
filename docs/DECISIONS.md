@@ -30,8 +30,8 @@
 
 | # | נקודה | סטטוס | סוגר את |
 |---|--------|--------|----------|
-| Q-A | כמה `HKHeartbeatSeriesSample` מגיעים פסיבית? (נוטה לשלילה) | בדיקת שדה 3–5 ימים על מכשיר אמיתי | האם `RRExtractor` שווה מאמץ (A.2/A.6.1) |
-| Q-B | ערכי `k` / `persistence` / `cooldown` סופיים | הסימולציה נותנת ערכי התחלה; כיול סופי דורש נתונים אמיתיים | לב לוגיקת ההתראה (B.7) |
+| Q-A | כמה `HKHeartbeatSeriesSample` מגיעים פסיבית? (נוטה לשלילה) | ממתין ל-Apple Watch. ייצוא ראשון היה משעון **Huawei** → 0 HRV (פער מקור, לא רעיון) | האם `RRExtractor` שווה מאמץ (A.2/A.6.1) |
+| Q-B | ערכי `k` / `persistence` / `cooldown` סופיים | מנוע הכיול (`analysis/`) בנוי ומאומת על נתונים סינתטיים; ממתין ל-HRV אמיתי מ-Apple Watch | לב לוגיקת ההתראה (B.7) |
 | Q-C | גרסת iOS מינימלית נתמכת | ✅ נסגר: **iOS 17 → SwiftData** | — |
 
 ## סטטוס מימוש (הליבה הפסיבית ב-Python)
@@ -55,5 +55,17 @@
 | watchOS | 🟡 שלד מינימלי |
 | `project.yml` / `Info.plist` / entitlements | ✅ נכתב |
 | אימות: `swift test` על Windows | ✅ ירוק — Swift 6.3.3 + VS Build Tools (C++/ARM64) + Win11 SDK; מתכון: [`swift/win-swift-test.cmd`](../swift/win-swift-test.cmd) |
+
+## יכולות מדידה ובדיקת נתונים אמיתיים
+
+- **יכולות מאומתות מול Apple** ([`capabilities.md`](capabilities.md)): כל מה שהנחנו קיים על
+  Apple Watch — נייטיב (SDNN, RR/heartbeat-series, ECG, דופק/שינה/SpO2) או מחושב אצלנו מ-RR
+  (RMSSD, pNN50, Coherence). RMSSD ו-Coherence אינם נייטיב — תמיד תוכננו כמחושבים (A.6, D-COH).
+- **ממצא feasibility:** ייצוא ראשון (Huawei, 410MB) הכיל **0 HRV** — פער של מקור-הנתונים
+  (Huawei לא כותב SDNN ל-HealthKit), לא כשל של הרעיון. שפע דופק/שינה/SpO2, אך דופק=ממוצע BPM
+  (לא RR) ולכן לא בר-המרה ל-RMSSD.
+- **מנוע הכיול** ([`../analysis/`](../analysis/)): parser זורם ל-`export.xml` + `calibrate`/`report`,
+  מאומת על נתונים סינתטיים (`make_sample_export`). מוכן ל-HRV אמיתי מ-Apple Watch (Breathe+שינה).
+- **בדיקה נוכחית = נתונים סינתטיים** (אישור המשתמש): בודקים את הצינור והנוסחאות ותופסים באגים.
 
 מסלול העבודה המלא: [`workplan/README.md`](workplan/README.md).
