@@ -10,17 +10,20 @@ Two layers, split by what can be verified where:
 `HRVCore` הוא פורט 1:1 של `hrv_core/` בפייתון; בדיקות ה-XCTest נושאות את אותם test vectors
 ומספרים כמו `tests/` — הן ה-oracle שמוכיח שהפורט זהה מספרית.
 
-## אימות הליבה (כל פלטפורמה עם Swift)
+## אימות הליבה
 
+**Mac:**
 ```bash
-cd swift
-swift test          # HRVCoreTests — חייב להיות ירוק ולתאום ל-pytest
+cd swift && swift test          # Xcode כולל את כל ה-toolchain
 ```
 
-> **הערה על Windows:** הליבה מכוונת ל-`*-windows-msvc`, ולכן קומפילציה מקומית דורשת
-> **Windows SDK + MSVC (VC Build Tools)** בנוסף ל-Swift toolchain. אם `swift build` נכשל עם
-> `could not find CLI tool 'link'` — חסר ה-MSVC. ראה `docs/workplan/track-G-project-setup.md`.
-> על **Mac** ה-toolchain מגיע עם Xcode ו-`swift test` עובד מיד.
+**Windows (כולל Windows on ARM64) — עובד ✅:**
+```bat
+swift\win-swift-test.cmd         # 23 XCTest ירוקים, תואם ל-pytest
+```
+הסקריפט מגדיר את סביבת ה-Developer (`vcvarsall arm64`), את PATH ל-Swift, ו-`SDKROOT` ל-Swift
+Windows SDK. דורש חד-פעמית: `Swift.Toolchain` + `VS Build Tools` (workload C++/ARM64) + Win11 SDK
+— ראה [`../docs/workplan/track-G-project-setup.md`](../docs/workplan/track-G-project-setup.md).
 
 ## בניית האפליקציה (Mac)
 

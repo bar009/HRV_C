@@ -50,10 +50,10 @@
 
 | שכבה | מצב |
 |------|-----|
-| `HRVCore` (Signal/Detection/Persistence) + XCTest | ✅ נכתב (פורט 1:1); `swift test` ממתין ל-toolchain — ראה [workplan/track-G](workplan/track-G-project-setup.md) |
+| `HRVCore` (Signal/Detection/Persistence) + XCTest | ✅ נכתב + **`swift test` ירוק על Windows ARM64** (23 XCTest = parity מול pytest) |
 | App: HealthKit, Coordinator, SwiftData, Notifications, SwiftUI | ✅ נכתב (Mac-only, לא מקומפל עד Mac) |
 | watchOS | 🟡 שלד מינימלי |
 | `project.yml` / `Info.plist` / entitlements | ✅ נכתב |
-| אימות: `swift test` על Windows | ❌ חסום — חסר Windows SDK + MSVC (Swift 6.3.3 מותקן ורץ) |
+| אימות: `swift test` על Windows | ✅ ירוק — Swift 6.3.3 + VS Build Tools (C++/ARM64) + Win11 SDK; מתכון: [`swift/win-swift-test.cmd`](../swift/win-swift-test.cmd) |
 
 מסלול העבודה המלא: [`workplan/README.md`](workplan/README.md).

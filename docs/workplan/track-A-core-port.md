@@ -1,7 +1,7 @@
 # Track A — פורט הליבה (HRVCore)
 
 **מיקום ב-spine:** S1 · [← חזרה לתזרים הראשי](README.md)
-**פלטפורמה:** Windows/Linux/Mac (Foundation בלבד) · **סטטוס:** 🟡 קוד + בדיקות נכתבו; `swift test` ממתין ל-toolchain (ראה [Track G](track-G-project-setup.md))
+**פלטפורמה:** Windows/Linux/Mac (Foundation בלבד) · **סטטוס:** ✅ `swift test` ירוק על Windows ARM64 (23 XCTest = parity מול 25 ה-pytest)
 
 ## מטרה
 פורט 1:1 של הליבה החישובית מפייתון ל-Swift, כך שהיא מתקמפלת ונבדקת מחוץ ל-Mac, ומשמשת
@@ -20,7 +20,7 @@
 - [x] Detection: `Statistics.swift`, `Models.swift`, `BaselineEngine.swift`, `AnomalyDetector.swift`
 - [x] Persistence: `HRVRepository.swift` (protocol), `InMemoryHRVRepository.swift`
 - [x] Tests: פורט כל 25 הבדיקות ל-`Tests/HRVCoreTests/` עם אותם מספרים
-- [ ] `swift test` ירוק על מכשיר עם toolchain (Windows כשיהיה SDK, או Mac)
+- [x] `swift test` ירוק על Windows ARM64 (ראה [`swift/win-swift-test.cmd`](../../swift/win-swift-test.cmd)); 23 XCTest, 0 כשלונות
 
 ## Windows-עכשיו / Mac-אחר-כך
 כל ה-Track בלתי-תלוי-פלטפורמה. נכתב עכשיו; ההרצה תלויה רק בזמינות toolchain.
