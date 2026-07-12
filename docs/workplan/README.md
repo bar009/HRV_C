@@ -74,6 +74,7 @@ G ─► A ─┬─► C ─┬─► F
 ```
 
 ## החלטות והקשר
+- **מיפוי לשיטת "קוד התת-מודע" (ה"למה" מאחורי המוצר):** [`../method-mapping.md`](../method-mapping.md)
 - החלטות ננעלות ונקודות פתוחות: [`../DECISIONS.md`](../DECISIONS.md)
 - מיפוי Python→Swift: [`../SWIFT_PORTING_MAP.md`](../SWIFT_PORTING_MAP.md)
 - אפיון וארכיטקטורה מלאים: [`../HRV_App_Spec.md`](../HRV_App_Spec.md) · [`../HRV_Architecture_Deep_Dive.md`](../HRV_Architecture_Deep_Dive.md)
