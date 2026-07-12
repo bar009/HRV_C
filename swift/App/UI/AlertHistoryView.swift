@@ -1,4 +1,4 @@
-// Track F -- alert history (Mac-only).
+// Track F -- alert history, styled from the design system (Mac-only).
 import SwiftUI
 import SwiftData
 
@@ -7,16 +7,27 @@ struct AlertHistoryView: View {
 
     var body: some View {
         NavigationStack {
-            List(alerts) { a in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(a.firedAt, format: .dateTime.day().month().hour().minute())
-                        .font(.headline)
-                    Text(a.reason)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(alerts) { a in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(a.firedAt, format: .dateTime.day().month().hour().minute())
+                                .font(.hrvCallout).fontWeight(.semibold)
+                                .foregroundStyle(HRVColor.textPrimary)
+                            Text(a.reason)
+                                .font(.hrvSubheadline)
+                                .foregroundStyle(HRVColor.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .background(HRVColor.surfacePrimary,
+                                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
                 }
+                .padding(20)
             }
-            .navigationTitle("היסטוריית התראות")
+            .background(HRVColor.surfaceBackground)
+            .navigationTitle("התראות")
             .overlay {
                 if alerts.isEmpty {
                     ContentUnavailableView("אין התראות", systemImage: "checkmark.circle",

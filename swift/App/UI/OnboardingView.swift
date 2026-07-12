@@ -1,33 +1,51 @@
-// Track F -- pre-permission explainer (Mac-only). A pre-permission screen lifts
-// the HealthKit authorization acceptance rate (Deep Dive 2.2.1).
+// Track F -- pre-permission explainer, styled from the Figma cover (Mac-only).
+// A pre-permission screen lifts HealthKit acceptance (Deep Dive 2.2.1).
 import SwiftUI
 
 struct OnboardingView: View {
     let onDone: () -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "waveform.path.ecg")
-                .font(.system(size: 64))
-                .foregroundStyle(.pink)
-            Text("ניטור HRV אישי")
-                .font(.largeTitle.bold())
-            Text("האפליקציה קוראת את נתוני ה-HRV שה-Apple Watch אוסף, בונה baseline אישי, "
-                 + "ומודיעה לך על שינוי חריג. הכול נשאר על המכשיר שלך — ללא ענן וללא שרת.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
+        VStack(alignment: .leading, spacing: 20) {
+            Text("HRV-C")
+                .font(.hrvSubheadline).fontWeight(.semibold)
+                .tracking(2)
+                .foregroundStyle(HRVColor.accentPrimary)
+
+            Text("דפוסים אישיים,\nבהבנה רגועה.")
+                .font(.hrvDisplay)
+                .foregroundStyle(HRVColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("ממשק wellness לניטור HRV פסיבי ב-iPhone וב-Apple Watch. הכול נשאר על המכשיר שלך — ללא ענן וללא שרת.")
+                .font(.hrvCallout)
+                .foregroundStyle(HRVColor.textSecondary)
+
+            BaselineMotif()
+                .frame(height: 150)
+                .padding(20)
+                .background(HRVColor.surfacePrimary,
+                            in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .padding(.vertical, 8)
+
             Text("זהו כלי wellness, לא אבחון רפואי.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(.hrvSubheadline)
+                .foregroundStyle(HRVColor.textSecondary)
+
             Spacer()
+
             Button(action: onDone) {
                 Text("להמשיך ולאשר הרשאות")
+                    .font(.hrvCallout).fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
             }
             .buttonStyle(.borderedProminent)
-            .padding(.horizontal)
+            .tint(HRVColor.accentPrimary)
+            .controlSize(.large)
         }
-        .padding()
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(HRVColor.surfaceBackground)
     }
 }
