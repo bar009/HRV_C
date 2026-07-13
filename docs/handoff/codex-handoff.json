@@ -1,0 +1,31 @@
+{
+  "project": "HRV-C",
+  "repository": "bar009/HRV_C",
+  "figmaFileKey": "hlCzE7OlX9yaZa7s5UJyhL",
+  "figmaPages": {
+    "masterPlan": "96:2",
+    "stateModel": "103:2",
+    "handoff": "58:2",
+    "iosHighFidelity": "42:2",
+    "watchHighFidelity": "42:3",
+    "prototype": "52:2"
+  },
+  "visibleStates": [
+    "setupRequired",
+    "learning",
+    "stable",
+    "attention",
+    "unavailable"
+  ],
+  "internalStates": [
+    "Watching",
+    "Cooldown"
+  ],
+  "nextMilestones": [
+    "M1",
+    "M2",
+    "M3"
+  ],
+  "sourcePdfIncluded": false,
+  "sourcePdfNote": "The original method PDF is intentionally excluded from a public-repository handoff."
+}

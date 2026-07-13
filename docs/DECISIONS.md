@@ -68,4 +68,21 @@
   מאומת על נתונים סינתטיים (`make_sample_export`). מוכן ל-HRV אמיתי מ-Apple Watch (Breathe+שינה).
 - **בדיקה נוכחית = נתונים סינתטיים** (אישור המשתמש): בודקים את הצינור והנוסחאות ותופסים באגים.
 
+## מיפוי מצב detector → presentation (M1)
+
+5 מצבים גלויים (PRODUCT_STATE_MODEL). מיושם ב-`PresentationMapper` (Swift ב-HRVCore + מקבילה
+`hrv_core/presentation.py`, עם בדיקות parity). **קדימות:** setupRequired > unavailable > מצב detector.
+
+| מצב detector / תנאי | presentation גלוי |
+|---|---|
+| אין setup (הרשאה/דגימה ראשונה) | `setupRequired` |
+| דגימה אמינה ישנה (stale) | `unavailable` |
+| Learning | `learning` (יום N/7) |
+| Normal | `stable` |
+| **Watching** | **`stable`** — מוסתר |
+| **Cooldown** | **`stable`** — מוסתר |
+| Alert (מאומת) | `attention` |
+
+`Watching`/`Cooldown` **לעולם לא נחשפים**; רק Alert מאומת → `attention`.
+
 מסלול העבודה המלא: [`workplan/README.md`](workplan/README.md).
