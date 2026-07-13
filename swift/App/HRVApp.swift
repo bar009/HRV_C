@@ -13,13 +13,15 @@ struct HRVApp: App {
     init() {
         do {
             container = try ModelContainer(
-                for: StoredSample.self, StoredBaseline.self, StoredAlert.self, StoredAnchor.self
+                for: StoredSample.self, StoredBaseline.self, StoredAlert.self, StoredAnchor.self,
+                     EventRecord.self, GuidedResponse.self
             )
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
-        let repo = SwiftDataRepository(context: ModelContext(container))
-        _coordinator = State(initialValue: MonitoringCoordinator(repository: repo))
+        let context = ModelContext(container)
+        let repo = SwiftDataRepository(context: context)
+        _coordinator = State(initialValue: MonitoringCoordinator(repository: repo, context: context))
     }
 
     var body: some Scene {
