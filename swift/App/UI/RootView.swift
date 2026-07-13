@@ -4,11 +4,24 @@ import SwiftUI
 /// RTL-first, accent tint. Settings is a separate sheet (not a tab).
 struct RootView: View {
     @Environment(\.colorScheme) private var scheme
+    @AppStorage("didOnboard") private var didOnboard = false
     @State private var tab: HRVTab = .today
     @State private var showSettings = false
 
     var body: some View {
         let t = HRVTheme.resolve(scheme)
+        Group {
+            if didOnboard {
+                mainShell(t)
+            } else {
+                OnboardingFlow(onDone: { didOnboard = true })
+            }
+        }
+        .tint(t.accentPrimary)
+        .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    private func mainShell(_ t: HRVTheme) -> some View {
         VStack(spacing: 0) {
             header(t)
             Group {
@@ -22,8 +35,6 @@ struct RootView: View {
             HRVTabBar(selection: $tab)
         }
         .background(t.surfaceBackground)
-        .tint(t.accentPrimary)
-        .environment(\.layoutDirection, .rightToLeft)
         .sheet(isPresented: $showSettings) { SettingsScreen() }
     }
 
