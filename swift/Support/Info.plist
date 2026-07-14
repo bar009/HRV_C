@@ -5,7 +5,7 @@
 <plist version="1.0">
 <dict>
     <key>NSHealthShareUsageDescription</key>
-    <string>האפליקציה קוראת דופק ו-HRV כדי לבנות עבורך baseline אישי ולזהות שינוי חריג במנוחה. הנתונים נשארים על המכשיר.</string>
+    <string>האפליקציה קוראת שונות קצב הלב (HRV) ודופק כדי לבנות עבורך טווח אישי ולזהות שינוי מתמשך במנוחה. הנתונים נשארים על המכשיר בלבד.</string>
     <key>UIBackgroundModes</key>
     <array>
         <string>processing</string>

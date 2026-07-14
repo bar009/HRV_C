@@ -12,10 +12,8 @@ struct HRVApp: App {
 
     init() {
         do {
-            container = try ModelContainer(
-                for: StoredSample.self, StoredBaseline.self, StoredAlert.self, StoredAnchor.self,
-                     EventRecord.self, GuidedResponse.self
-            )
+            // Local-only, no CloudKit, excluded from backup, file-protected (checklist #6).
+            container = try PrivacyStore.makeContainer()
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }

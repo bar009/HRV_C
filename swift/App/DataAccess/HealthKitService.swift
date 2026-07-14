@@ -15,7 +15,11 @@ final class HealthKitService {
     static var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
 
     func requestAuthorization() async throws {
-        let read: Set<HKObjectType> = [sdnnType, hrType, HKSeriesType.heartbeat()]
+        // Launch checklist #1 -- request only what the app actually reads today
+        // (App Review rejects requesting unused types). SDNN drives detection now;
+        // heartRate is for the upcoming context stratification (Track B). The
+        // heartbeat/RR series returns here only when RRExtractor lands (Q-A / Track H).
+        let read: Set<HKObjectType> = [sdnnType, hrType]
         try await store.requestAuthorization(toShare: [], read: read)
     }
 

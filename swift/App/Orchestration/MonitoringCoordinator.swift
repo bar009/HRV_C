@@ -14,8 +14,9 @@ final class MonitoringCoordinator {
     #if canImport(SwiftData)
     private let context: ModelContext
     #endif
-    private let engine: BaselineEngine
-    private let detector: AnomalyDetector
+    private var engine: BaselineEngine
+    private var detector: AnomalyDetector
+    private let config: DetectorConfig
     private let alerts = AlertService()
     #if canImport(HealthKit)
     private let health = HealthKitService()
@@ -44,6 +45,7 @@ final class MonitoringCoordinator {
     init(repository: HRVRepository, context: ModelContext, config: DetectorConfig = DetectorConfig()) {
         self.repository = repository
         self.context = context
+        self.config = config
         self.engine = BaselineEngine()
         self.detector = AnomalyDetector(engine: engine, config: config)
         reloadStored()
@@ -106,6 +108,36 @@ final class MonitoringCoordinator {
             #endif
             reloadStored()
         }
+    }
+
+    /// Launch checklist #7 -- wipe every stored trace and reset to first-run.
+    func deleteAllData() {
+        #if canImport(SwiftData)
+        try? context.delete(model: StoredSample.self)
+        try? context.delete(model: StoredBaseline.self)
+        try? context.delete(model: StoredAlert.self)
+        try? context.delete(model: StoredAnchor.self)
+        try? context.delete(model: EventRecord.self)
+        try? context.delete(model: GuidedResponse.self)
+        try? context.save()
+        #endif
+        // Fresh detection state: drop the in-memory baseline window + detector state.
+        engine = BaselineEngine()
+        detector = AnomalyDetector(engine: engine, config: config)
+        baseline = nil
+        recentSamples = []
+        events = []
+        hasAnySample = false
+        lastSampleAt = nil
+        lastAlertID = nil
+        UserDefaults.standard.removeObject(forKey: "didOnboard")
+        refresh()
+    }
+
+    /// Launch checklist #10 -- Demo Mode: feed synthetic samples so a reviewer sees
+    /// the app work without an Apple Watch. Runs through the real (tested) pipeline.
+    func loadDemoData() {
+        ingest(DemoData.generate())
     }
 
     // MARK: internals

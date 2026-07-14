@@ -5,6 +5,7 @@ import SwiftUI
 struct SettingsScreen: View {
     @Environment(MonitoringCoordinator.self) private var coordinator
     @Environment(\.dismiss) private var dismiss
+    @State private var showDeleteConfirm = false
 
     var body: some View {
         NavigationStack {
@@ -49,10 +50,31 @@ struct SettingsScreen: View {
                                        text: "זהו כלי wellness ואינו אבחון רפואי. הוא אינו מזהה רגש, דפוס תת-מודע או מצב רפואי, ואינו מחליף ייעוץ מקצועי.")
                     } label: { Label("הצהרת Wellness", systemImage: "checkmark.seal") }
                 }
+
+                Section("נתונים") {
+                    Button {
+                        coordinator.loadDemoData()
+                    } label: {
+                        Label("טעינת נתוני הדגמה", systemImage: "wand.and.stars")
+                    }
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("מחיקת כל הנתונים", systemImage: "trash")
+                    }
+                } footer: {
+                    Text("נתוני הדגמה מאפשרים לראות את האפליקציה עובדת ללא Apple Watch. מחיקה מסירה את כל ההיסטוריה, הטווח האישי וההגדרות מהמכשיר ומחזירה למצב התחלתי.")
+                }
             }
             .navigationTitle("הגדרות")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("סגירה") { dismiss() } }
+            }
+            .confirmationDialog("למחוק את כל הנתונים?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                Button("מחיקה", role: .destructive) { coordinator.deleteAllData(); dismiss() }
+                Button("ביטול", role: .cancel) {}
+            } message: {
+                Text("הפעולה בלתי הפיכה. כל ההיסטוריה והטווח האישי יימחקו מהמכשיר.")
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
