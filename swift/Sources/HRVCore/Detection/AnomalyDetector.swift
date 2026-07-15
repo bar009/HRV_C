@@ -20,9 +20,16 @@ public final class AnomalyDetector {
     private var consecutiveAnomalies = 0
     private var lastAlertAt: Date?
 
-    public init(engine: BaselineEngine, config: DetectorConfig = DetectorConfig()) {
+    public init(engine: BaselineEngine, config: DetectorConfig = DetectorConfig(),
+                lastAlertAt: Date? = nil) {
         self.engine = engine
         self.config = config
+        self.lastAlertAt = lastAlertAt
+        if lastAlertAt != nil {
+            state = .cooldown
+        } else if engine.hasMinBaseline() {
+            state = .normal
+        }
     }
 
     private func isAnomaly(_ z: Double) -> Bool {

@@ -43,12 +43,15 @@ final class MonitoringCoordinator {
 
     #if canImport(SwiftData)
     init(repository: HRVRepository, context: ModelContext, config: DetectorConfig = DetectorConfig()) {
+        let engine = BaselineEngine()
+
         self.repository = repository
         self.context = context
         self.config = config
-        self.engine = BaselineEngine()
+        self.engine = engine
         self.detector = AnomalyDetector(engine: engine, config: config)
         reloadStored()
+        restorePipelineState()
         refresh()
     }
     #endif
@@ -166,8 +169,28 @@ final class MonitoringCoordinator {
         let d = FetchDescriptor<EventRecord>(sortBy: [SortDescriptor(\.firedAt, order: .reverse)])
         events = (try? context.fetch(d)) ?? []
         #endif
-        let from = Date().addingTimeInterval(-30 * 86_400)
+        let from = Date().addingTimeInterval(-Double(engine.windowDays) * 86_400)
         recentSamples = repository.samples(from: from, to: Date())
+    }
+
+    /// Rehydrate the rolling baseline and alert cooldown without replaying
+    /// notifications or writing duplicate samples after an app restart.
+    private func restorePipelineState() {
+        for sample in recentSamples
+            where sample.quality == SampleQuality.high.rawValue && sample.context != "active" {
+            engine.ingest(timestamp: sample.timestamp, rmssdValue: sample.rawValueMs)
+        }
+
+        let latestSample = recentSamples.max { $0.timestamp < $1.timestamp }
+        hasAnySample = latestSample != nil
+        lastSampleAt = latestSample?.timestamp
+
+        let cooldownStart = Date().addingTimeInterval(-config.cooldown)
+        let latestAlert = repository.recentAlerts(since: cooldownStart)
+            .max { $0.firedAt < $1.firedAt }
+        lastAlertID = latestAlert?.id
+        detector = AnomalyDetector(engine: engine, config: config,
+                                   lastAlertAt: latestAlert?.firedAt)
     }
 
     /// Recompute the user-visible presentation state from the current pipeline state.

@@ -77,4 +77,30 @@ final class AnomalyDetectorTests: XCTestCase {
         }
         XCTAssertEqual(alerts.count, 2)
     }
+
+    func testRestoredBaselineStartsInNormalState() {
+        let engine = BaselineEngine(windowDays: 60, minBaselineDays: 7)
+        for d in 0..<7 {
+            engine.ingest(timestamp: day(d), rmssdValue: healthy[d % healthy.count])
+        }
+
+        let restored = AnomalyDetector(engine: engine, config: config())
+
+        XCTAssertEqual(restored.state, .normal)
+    }
+
+    func testRestoredRecentAlertPreservesCooldown() {
+        let engine = BaselineEngine(windowDays: 60, minBaselineDays: 7)
+        for d in 0..<7 {
+            engine.ingest(timestamp: day(d), rmssdValue: healthy[d % healthy.count])
+        }
+        let alertAt = day(7)
+        let restored = AnomalyDetector(engine: engine, config: config(), lastAlertAt: alertAt)
+
+        XCTAssertEqual(restored.state, .cooldown)
+        XCTAssertNil(restored.evaluate(timestamp: day(7, hours: 1), rmssdValue: 45))
+        XCTAssertEqual(restored.state, .cooldown)
+        XCTAssertNil(restored.evaluate(timestamp: day(7, hours: 9), rmssdValue: 45))
+        XCTAssertEqual(restored.state, .normal)
+    }
 }
