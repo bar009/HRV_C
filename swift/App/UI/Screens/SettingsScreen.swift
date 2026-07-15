@@ -51,7 +51,7 @@ struct SettingsScreen: View {
                     } label: { Label("הצהרת Wellness", systemImage: "checkmark.seal") }
                 }
 
-                Section("נתונים") {
+                Section {
                     Button {
                         coordinator.loadDemoData()
                     } label: {
@@ -62,6 +62,8 @@ struct SettingsScreen: View {
                     } label: {
                         Label("מחיקת כל הנתונים", systemImage: "trash")
                     }
+                } header: {
+                    Text("נתונים")
                 } footer: {
                     Text("נתוני הדגמה מאפשרים לראות את האפליקציה עובדת ללא Apple Watch. מחיקה מסירה את כל ההיסטוריה, הטווח האישי וההגדרות מהמכשיר ומחזירה למצב התחלתי.")
                 }

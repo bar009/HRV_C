@@ -18,6 +18,7 @@ targets:
     sources: [App]
     dependencies:
       - package: HRVCore
+        product: HRVCore
       - target: HRVWatch
         embed: true
     settings:
@@ -36,6 +37,7 @@ targets:
     sources: [WatchApp]
     dependencies:
       - package: HRVCore
+        product: HRVCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bar009.hrvc.watchkitapp

@@ -28,10 +28,26 @@ Windows SDK. דורש חד-פעמית: `Swift.Toolchain` + `VS Build Tools` (wor
 ## בניית האפליקציה (Mac)
 
 ```bash
-brew install xcodegen        # פעם אחת
 cd swift
-xcodegen generate            # יוצר HRV.xcodeproj מ-project.yml
-open HRV.xcodeproj           # build & run על iPhone + Apple Watch מזווגים
+./mac-xcode.sh open           # מייצר HRV.xcodeproj ופותח אותו ב-Xcode
 ```
+
+הסקריפט לא דורש Homebrew או הרשאות Admin. אם XcodeGen אינו מותקן, הוא בונה גרסה
+מקובעת בתוך `~/Library/Caches` ומשתמש בה בפעמים הבאות. אחרי שינוי ב-Windows,
+זרימת העבודה ב-Mac היא:
+
+```bash
+cd ~/Documents/HRV_C
+git pull
+./swift/mac-xcode.sh open
+```
+
+לאימות build מלא משורת הפקודה, ללא חתימה:
+
+```bash
+./swift/mac-xcode.sh test
+```
+
+`HRV.xcodeproj` הוא קובץ מיוצר ואינו נשמר ב-Git. מקור האמת נשאר `project.yml`.
 
 מסלול העבודה המלא, שלב-אחר-שלב, נמצא ב-[`docs/workplan/README.md`](../docs/workplan/README.md).

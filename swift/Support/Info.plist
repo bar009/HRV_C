@@ -1,15 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Shared Info.plist keys for the iOS app. HealthKit usage strings must be
-     specific (Deep Dive 1.3.3) -- Apple rejects generic "we need your data". -->
+<!-- Shared Info.plist keys for the iOS app. HealthKit usage text must be
+     specific because Apple rejects generic descriptions. -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
     <key>NSHealthShareUsageDescription</key>
     <string>האפליקציה קוראת שונות קצב הלב (HRV) ודופק כדי לבנות עבורך טווח אישי ולזהות שינוי מתמשך במנוחה. הנתונים נשארים על המכשיר בלבד.</string>
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>processing</string>
-    </array>
     <key>UILaunchScreen</key>
     <dict/>
 </dict>

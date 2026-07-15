@@ -19,6 +19,7 @@ htmlcov/
 # Swift / Xcode
 swift/.build/
 swift/.swiftpm/
+swift/XcodeGen/
 *.xcodeproj/
 DerivedData/
 *.xcuserstate
