@@ -15,6 +15,7 @@ htmlcov/
 # Simulation artifacts
 *.png
 !docs/**/*.png
+!swift/**/*.appiconset/*.png
 
 # Swift / Xcode
 swift/.build/
