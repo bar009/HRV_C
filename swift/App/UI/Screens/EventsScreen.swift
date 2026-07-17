@@ -4,6 +4,7 @@ import SwiftUI
 struct EventsScreen: View {
     @Environment(MonitoringCoordinator.self) private var coordinator
     @Environment(\.colorScheme) private var scheme
+    @State private var selectedEvent: EventRecord?
 
     var body: some View {
         let t = HRVTheme.resolve(scheme)
@@ -20,7 +21,7 @@ struct EventsScreen: View {
                         EventRow(title: Self.title(for: event.firedAt),
                                  subtitle: Self.subtitle(for: event),
                                  isNew: !event.seen) {
-                            coordinator.markEventSeen(event.id)
+                            selectedEvent = event
                         }
                     }
                 }
@@ -29,6 +30,9 @@ struct EventsScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(t.surfaceBackground)
+        .sheet(item: $selectedEvent) { event in
+            EventDetailView(event: event)
+        }
     }
 
     private static let dateFmt: DateFormatter = {

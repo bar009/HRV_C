@@ -26,7 +26,17 @@ struct HRVApp: App {
         WindowGroup {
             RootView()
                 .environment(coordinator)
-                .task { await coordinator.start() }
+                .task {
+                    #if DEBUG
+                    // Dev/UI-test hook: `-seedDemoData` loads Demo Mode on launch
+                    // (the simulator can't be driven through Settings headlessly).
+                    if ProcessInfo.processInfo.arguments.contains("-seedDemoData"),
+                       !coordinator.isDemoMode {
+                        coordinator.loadDemoData()
+                    }
+                    #endif
+                    await coordinator.start()
+                }
         }
         .modelContainer(container)
     }

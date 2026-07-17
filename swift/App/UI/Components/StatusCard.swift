@@ -50,6 +50,8 @@ struct StatusCard: View {
         return f
     }()
     static func updated(_ date: Date) -> String {
-        "עודכן " + rel.localizedString(for: date, relativeTo: Date())
+        // A just-arrived sample would otherwise render as "in 0 seconds".
+        if abs(date.timeIntervalSinceNow) < 60 { return "עודכן עכשיו" }
+        return "עודכן " + rel.localizedString(for: date, relativeTo: Date())
     }
 }

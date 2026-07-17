@@ -31,10 +31,14 @@ final class MonitoringCoordinator {
     private(set) var recentSamples: [ProcessedHRVSample] = []
     private(set) var events: [EventRecord] = []
     private(set) var isHealthAuthorized = false
+    /// Demo Mode (launch checklist #10): synthetic data stands in for HealthKit,
+    /// so the setup gate must not require a real authorization. Persisted so the
+    /// stored demo samples still render after a relaunch.
+    private(set) var isDemoMode = UserDefaults.standard.bool(forKey: "demoMode")
 
     var learningDay: Int { engine.distinctDays() }
     var learningTotalDays: Int { 7 }
-    var hasCompletedSetup: Bool { isHealthAuthorized && hasAnySample }
+    var hasCompletedSetup: Bool { (isHealthAuthorized || isDemoMode) && hasAnySample }
 
     // ---- internal ----
     private var lastSampleAt: Date?
@@ -58,6 +62,9 @@ final class MonitoringCoordinator {
 
     // MARK: lifecycle
     func start() async {
+        // Demo Mode replaces the HealthKit feed entirely -- don't prompt for
+        // authorization or observe samples on top of the synthetic data.
+        guard !isDemoMode else { refresh(); return }
         #if canImport(HealthKit)
         guard HealthKitService.isAvailable else { return }
         await requestHealthAccess()
@@ -103,13 +110,43 @@ final class MonitoringCoordinator {
         #endif
     }
 
+    /// Relevance feedback from the event detail screen. Updates the event's
+    /// existing GuidedResponse if there is one, so re-answering never
+    /// duplicates records (the success metric counts events, not taps).
+    func saveRelevance(_ value: String, for eventID: UUID) {
+        #if canImport(SwiftData)
+        var d = FetchDescriptor<GuidedResponse>(predicate: #Predicate { $0.eventID == eventID })
+        d.sortBy = [SortDescriptor(\.createdAt, order: .reverse)]
+        if let existing = try? context.fetch(d).first {
+            existing.relevance = value
+        } else {
+            context.insert(GuidedResponse(eventID: eventID, relevance: value))
+        }
+        try? context.save()
+        #endif
+    }
+
+    /// The stored relevance answer for an event, if the user already gave one.
+    func savedRelevance(for eventID: UUID) -> String? {
+        #if canImport(SwiftData)
+        var d = FetchDescriptor<GuidedResponse>(predicate: #Predicate { $0.eventID == eventID })
+        d.sortBy = [SortDescriptor(\.createdAt, order: .reverse)]
+        let stored = (try? context.fetch(d).first?.relevance) ?? ""
+        return stored.isEmpty ? nil : stored
+        #else
+        return nil
+        #endif
+    }
+
     func markEventSeen(_ id: UUID) {
         if let e = events.first(where: { $0.id == id }) {
             e.seen = true
             #if canImport(SwiftData)
             try? context.save()
             #endif
-            reloadStored()
+            // Full refresh (not just reload): seeing the live event is one of the
+            // Attention exits, so the presentation must be recomputed.
+            refresh()
         }
     }
 
@@ -133,6 +170,8 @@ final class MonitoringCoordinator {
         hasAnySample = false
         lastSampleAt = nil
         lastAlertID = nil
+        isDemoMode = false
+        UserDefaults.standard.removeObject(forKey: "demoMode")
         UserDefaults.standard.removeObject(forKey: "didOnboard")
         refresh()
     }
@@ -140,6 +179,8 @@ final class MonitoringCoordinator {
     /// Launch checklist #10 -- Demo Mode: feed synthetic samples so a reviewer sees
     /// the app work without an Apple Watch. Runs through the real (tested) pipeline.
     func loadDemoData() {
+        isDemoMode = true
+        UserDefaults.standard.set(true, forKey: "demoMode")
         ingest(DemoData.generate())
     }
 
@@ -208,6 +249,22 @@ final class MonitoringCoordinator {
         )
         presentation = PresentationMapper.map(input)
         reloadStored()
+        // PRODUCT_STATE_MODEL: Attention persists after a confirmed alert until
+        // the Guided Moment is completed/skipped or the data returns to range.
+        // The detector's .alert state is transient (it moves to .cooldown on the
+        // same tick), so the ongoing-attention window is derived here.
+        if case .stable = presentation, let e = activeAttentionEvent {
+            presentation = .attention(alertID: e.id, lastUpdated: lastSampleAt)
+        }
+    }
+
+    /// The newest event, while it is still "live": not yet acted on by the user
+    /// and fired within one cooldown period of the newest sample.
+    private var activeAttentionEvent: EventRecord? {
+        guard let e = events.first, !e.seen,
+              let last = lastSampleAt,
+              last.timeIntervalSince(e.firedAt) <= config.cooldown else { return nil }
+        return e
     }
 
     private func isRecent(_ date: Date?) -> Bool {

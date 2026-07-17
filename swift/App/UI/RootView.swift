@@ -8,6 +8,17 @@ struct RootView: View {
     @State private var tab: HRVTab = .today
     @State private var showSettings = false
 
+    init() {
+        #if DEBUG
+        // Dev/UI-test hook: `-startTab trends|events|today` opens on that tab
+        // (launch arguments surface through the UserDefaults argument domain).
+        if let raw = UserDefaults.standard.string(forKey: "startTab"),
+           let initial = HRVTab(rawValue: raw) {
+            _tab = State(initialValue: initial)
+        }
+        #endif
+    }
+
     var body: some View {
         let t = HRVTheme.resolve(scheme)
         Group {

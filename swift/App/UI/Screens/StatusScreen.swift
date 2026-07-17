@@ -29,6 +29,11 @@ struct StatusScreen: View {
         return nil
     }
 
+    /// Newest sample's raw SDNN in ms -- the concrete number behind the state.
+    private var latestValueMs: Double? {
+        coordinator.recentSamples.max { $0.timestamp < $1.timestamp }?.rawValueMs
+    }
+
     @ViewBuilder private var content: some View {
         switch coordinator.presentation {
         case .setupRequired:                 setupRequired
@@ -69,6 +74,7 @@ struct StatusScreen: View {
     private func stable(updated: Date?) -> some View {
         VStack(alignment: .leading, spacing: HRVLayout.space16) {
             StatusCard(kind: .stable, eyebrow: "מצב נוכחי", title: "בטווח האישי שלך", timestamp: updated)
+            MeasuresRow(latestMs: latestValueMs, baseline: coordinator.baseline)
             BaselineChartCard(samples: coordinator.recentSamples, baseline: coordinator.baseline)
         }
     }
@@ -79,6 +85,7 @@ struct StatusScreen: View {
             StatusCard(kind: .attention, eyebrow: "אירוע חדש", title: "זוהה שינוי מתמשך",
                        message: "הדפוס שלך נמצא מתחת לטווח האישי במשך כמה מדידות רצופות.",
                        timestamp: updated)
+            MeasuresRow(latestMs: latestValueMs, baseline: coordinator.baseline)
             PrimaryButton(title: "לבדוק מה קורה עכשיו") { showGuided = true }
             Text("אפשר להתייחס לזה כהזמנה לעצור, לנוח ולשים לב להרגשה הכללית שלך.")
                 .font(.hrvCallout).foregroundStyle(t.textSecondary)
