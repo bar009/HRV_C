@@ -4,6 +4,7 @@ import SwiftUI
 /// RTL-first, accent tint. Settings is a separate sheet (not a tab).
 struct RootView: View {
     @Environment(\.colorScheme) private var scheme
+    @Environment(MonitoringCoordinator.self) private var coordinator
     @AppStorage("didOnboard") private var didOnboard = false
     @State private var tab: HRVTab = .today
     @State private var showSettings = false
@@ -30,6 +31,11 @@ struct RootView: View {
         }
         .tint(t.accentPrimary)
         .environment(\.layoutDirection, .rightToLeft)
+        // P3: a tapped alert notification lands on Today, where StatusScreen
+        // opens the Guided Moment for the pending alert.
+        .onChange(of: coordinator.pendingGuidedAlertID) { _, id in
+            if id != nil { tab = .today }
+        }
     }
 
     private func mainShell(_ t: HRVTheme) -> some View {

@@ -21,6 +21,9 @@ final class MonitoringCoordinator {
     #if canImport(HealthKit)
     private let health = HealthKitService()
     #endif
+    #if canImport(WatchConnectivity)
+    private let watchSync = PhoneWatchSync()   // Track E: status mirror
+    #endif
 
     /// Passive SDNN arrives a few times/day; older than this -> Unavailable.
     private let stalenessInterval: TimeInterval = 6 * 3600
@@ -31,6 +34,9 @@ final class MonitoringCoordinator {
     private(set) var recentSamples: [ProcessedHRVSample] = []
     private(set) var events: [EventRecord] = []
     private(set) var isHealthAuthorized = false
+    /// Set when the user taps an alert notification (UI_WIRING P3); RootView
+    /// switches to Today and StatusScreen opens the Guided Moment, then clears it.
+    var pendingGuidedAlertID: UUID?
     /// Demo Mode (launch checklist #10): synthetic data stands in for HealthKit,
     /// so the setup gate must not require a real authorization. Persisted so the
     /// stored demo samples still render after a relaunch.
@@ -57,6 +63,9 @@ final class MonitoringCoordinator {
         reloadStored()
         restorePipelineState()
         refresh()
+        alerts.onOpenAlert = { [weak self] eventID in
+            Task { @MainActor in self?.pendingGuidedAlertID = eventID }
+        }
     }
     #endif
 
@@ -71,25 +80,44 @@ final class MonitoringCoordinator {
         health.startObservingSDNN(
             anchorProvider: { [weak self] key in self?.repository.anchor(for: key) },
             anchorSink: { [weak self] data, key in self?.repository.saveAnchor(data, for: key) },
-            onSamples: { [weak self] samples in self?.ingest(samples) }
+            onSamples: { [weak self] samples, classifier in self?.ingest(samples, classifier: classifier) }
         )
         #endif
         refresh()
     }
 
     /// Core pipeline for a batch of new samples (also the unit-testable seam).
-    func ingest(_ samples: [HRVSample]) {
+    /// The classifier (Track H) tags each sample rest/sleep/active; active
+    /// samples are excluded from both the baseline and alerting by the core.
+    func ingest(_ samples: [HRVSample], classifier: ContextClassifier = ContextClassifier()) {
         for s in samples where s.quality == .high {
-            let ctx = SampleContext(isRestful: true)  // TODO(Track H): real stratification
+            let ctx = classifier.context(at: s.timestamp)
             if let event = detector.evaluate(timestamp: s.timestamp, rmssdValue: s.valueMs, context: ctx) {
                 recordEvent(event)
-                alerts.fireHRVDrop(event)   // P3
             }
-            persist(s)
+            if ctx.isRestful { resolveOpenEventIfRecovered(at: s.timestamp, valueMs: s.valueMs) }
+            persist(s, label: classifier.label(at: s.timestamp))
             hasAnySample = true
             lastSampleAt = s.timestamp
         }
         refresh()
+    }
+
+    /// P6: an event stays "open" while readings remain below the personal range;
+    /// the first restful in-range sample closes every open event (a long episode
+    /// can spawn several alerts across cooldowns) and stamps their durations.
+    private func resolveOpenEventIfRecovered(at timestamp: Date, valueMs: Double) {
+        let open = events.filter { $0.durationHours == nil && timestamp > $0.firedAt }
+        guard !open.isEmpty,
+              let baseline = engine.currentBaseline(asOf: timestamp) else { return }
+        let z = robustZ(log(valueMs), baseline: baseline)
+        guard z >= -config.k else { return }
+        for event in open {
+            event.durationHours = max(0, timestamp.timeIntervalSince(event.firedAt) / 3600)
+        }
+        #if canImport(SwiftData)
+        try? context.save()
+        #endif
     }
 
     // MARK: actions (bound from screens per UI_WIRING.md)
@@ -181,7 +209,8 @@ final class MonitoringCoordinator {
     func loadDemoData() {
         isDemoMode = true
         UserDefaults.standard.set(true, forKey: "demoMode")
-        ingest(DemoData.generate())
+        let batch = DemoData.generate()
+        ingest(batch.samples, classifier: batch.classifier)
     }
 
     // MARK: internals
@@ -189,19 +218,25 @@ final class MonitoringCoordinator {
         let rec = EventRecord(firedAt: event.firedAt, robustZ: event.robustZ,
                               rawValueMs: event.rawValueMs, reason: event.reason)
         lastAlertID = rec.id
+        // Keep the in-memory list current mid-batch so recovery inside the same
+        // ingest pass (resolveOpenEventIfRecovered) can see and close this event.
+        events.insert(rec, at: 0)
         #if canImport(SwiftData)
         context.insert(rec)
         try? context.save()
         #endif
         repository.record(AlertRecord(id: rec.id, firedAt: event.firedAt, robustZ: event.robustZ,
                                       rawValueMs: event.rawValueMs, reason: event.reason))
+        // P3: the notification carries the event id so a tap can deep-link
+        // straight into the Guided Moment for this event.
+        alerts.fireHRVDrop(event, eventID: rec.id)
     }
 
-    private func persist(_ s: HRVSample) {
+    private func persist(_ s: HRVSample, label: String) {
         let processed = ProcessedHRVSample(
             timestamp: s.timestamp, lnRmssd: log(s.valueMs), rawValueMs: s.valueMs,
             metric: s.metric.rawValue, quality: s.quality.rawValue,
-            context: "rest", source: s.source.rawValue)
+            context: label, source: s.source.rawValue)
         repository.save(processed)
     }
 
@@ -256,12 +291,36 @@ final class MonitoringCoordinator {
         if case .stable = presentation, let e = activeAttentionEvent {
             presentation = .attention(alertID: e.id, lastUpdated: lastSampleAt)
         }
+        pushStateToWatch()
     }
 
-    /// The newest event, while it is still "live": not yet acted on by the user
-    /// and fired within one cooldown period of the newest sample.
+    /// Track E: mirror the user-visible state to the watch after every refresh.
+    private func pushStateToWatch() {
+        #if canImport(WatchConnectivity)
+        let stateName: String
+        switch presentation {
+        case .setupRequired: stateName = "setupRequired"
+        case .learning:      stateName = "learning"
+        case .stable:        stateName = "stable"
+        case .attention:     stateName = "attention"
+        case .unavailable:   stateName = "unavailable"
+        }
+        let latest = recentSamples.max { $0.timestamp < $1.timestamp }?.rawValueMs
+        watchSync.push(state: stateName,
+                       latestMs: latest,
+                       rangeLoMs: baseline.map { exp($0.lowerBound) },
+                       rangeHiMs: baseline.map { exp($0.upperBound) },
+                       updatedAt: lastSampleAt)
+        #endif
+    }
+
+    /// The newest event, while it is still "live": not yet acted on by the
+    /// user, still open (readings haven't returned to range -- the second
+    /// PRODUCT_STATE_MODEL exit), and fired within one cooldown period of the
+    /// newest sample.
     private var activeAttentionEvent: EventRecord? {
         guard let e = events.first, !e.seen,
+              e.durationHours == nil,
               let last = lastSampleAt,
               last.timeIntervalSince(e.firedAt) <= config.cooldown else { return nil }
         return e

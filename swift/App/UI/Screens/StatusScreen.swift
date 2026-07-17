@@ -20,9 +20,23 @@ struct StatusScreen: View {
         }
         .background(t.surfaceBackground)
         .sheet(isPresented: $showGuided) {
-            GuidedMomentView(alertID: currentAlertID)
+            GuidedMomentView(alertID: pendingAlertID ?? currentAlertID)
+        }
+        // P3: notification tap -> open the Guided Moment for that alert.
+        // onAppear covers the cold-launch-from-notification case, where the
+        // pending id is set before this view exists.
+        .onAppear {
+            if pendingAlertID != nil { showGuided = true }
+        }
+        .onChange(of: coordinator.pendingGuidedAlertID) { _, id in
+            if id != nil { showGuided = true }
+        }
+        .onChange(of: showGuided) { _, shown in
+            if !shown { coordinator.pendingGuidedAlertID = nil }
         }
     }
+
+    private var pendingAlertID: UUID? { coordinator.pendingGuidedAlertID }
 
     private var currentAlertID: UUID? {
         if case let .attention(id, _) = coordinator.presentation { return id }
