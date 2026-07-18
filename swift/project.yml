@@ -20,6 +20,10 @@ schemes:
         HRV: all
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - HRVAppTests
     archive:
       config: Release
 
@@ -42,6 +46,22 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
+
+  # App-layer unit tests (coordinator pipeline, classifier). Hosted by the app
+  # because AlertService touches UNUserNotificationCenter, which crashes in an
+  # unhosted test runner.
+  HRVAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [AppTests]
+    dependencies:
+      - target: HRV
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/HRV.app/HRV
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.bar009.hrvc.tests
+        GENERATE_INFOPLIST_FILE: YES
 
   HRVWatch:
     type: application

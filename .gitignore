@@ -21,9 +21,13 @@ htmlcov/
 swift/.build/
 swift/.swiftpm/
 swift/XcodeGen/
+swift/build/
 *.xcodeproj/
 DerivedData/
 *.xcuserstate
+
+# Stray duplicate starter project (safe to delete)
+/HRC_C/
 
 # OS / editor
 .DS_Store

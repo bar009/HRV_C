@@ -215,6 +215,22 @@ final class MonitoringCoordinator {
 
     // MARK: internals
     private func recordEvent(_ event: AlertEvent) {
+        // PRODUCT_STATE_MODEL: one sustained deviation == one event. The
+        // detector re-alerts every cooldown while the drop persists; those
+        // re-alerts extend the still-open episode instead of adding rows.
+        if let open = events.first, open.durationHours == nil {
+            if abs(event.robustZ) > abs(open.robustZ) {   // keep the worst depth
+                open.robustZ = event.robustZ
+                open.rawValueMs = event.rawValueMs
+            }
+            open.seen = false   // a fresh confirmed alert re-enters Attention
+            lastAlertID = open.id
+            #if canImport(SwiftData)
+            try? context.save()
+            #endif
+            alerts.fireHRVDrop(event, eventID: open.id)
+            return
+        }
         let rec = EventRecord(firedAt: event.firedAt, robustZ: event.robustZ,
                               rawValueMs: event.rawValueMs, reason: event.reason)
         lastAlertID = rec.id
@@ -314,15 +330,13 @@ final class MonitoringCoordinator {
         #endif
     }
 
-    /// The newest event, while it is still "live": not yet acted on by the
-    /// user, still open (readings haven't returned to range -- the second
-    /// PRODUCT_STATE_MODEL exit), and fired within one cooldown period of the
-    /// newest sample.
+    /// The newest event, while it is still "live": open (readings haven't
+    /// returned to range -- resolution closes it) and not yet acknowledged
+    /// (Guided Moment completion/skip marks it seen). Together these encode
+    /// both PRODUCT_STATE_MODEL exits; data staleness is already handled by
+    /// the mapper's unavailable precedence before this override applies.
     private var activeAttentionEvent: EventRecord? {
-        guard let e = events.first, !e.seen,
-              e.durationHours == nil,
-              let last = lastSampleAt,
-              last.timeIntervalSince(e.firedAt) <= config.cooldown else { return nil }
+        guard let e = events.first, !e.seen, e.durationHours == nil else { return nil }
         return e
     }
 
