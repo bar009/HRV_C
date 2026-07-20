@@ -9,7 +9,6 @@ import HRVCore
 final class HealthKitService {
     private let store = HKHealthStore()
     private let sdnnType = HKQuantityType(.heartRateVariabilitySDNN)
-    private let hrType = HKQuantityType(.heartRate)
     private let anchorKey = "hrvSDNN"
 
     static var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
@@ -17,11 +16,14 @@ final class HealthKitService {
     func requestAuthorization() async throws {
         // Launch checklist #1 -- request only what the app actually reads today
         // (App Review rejects requesting unused types). SDNN drives detection;
-        // heartRate, workouts and sleepAnalysis feed context stratification
-        // (Track H). The heartbeat/RR series returns only when RRExtractor
-        // lands (Q-A).
+        // workouts and sleepAnalysis feed context stratification (Track H).
+        //
+        // heartRate is deliberately NOT requested: nothing queries it. It comes
+        // back when it earns its place -- either HR-based restfulness gating
+        // (needs a threshold tuned on real watch data, Q-B) or RRExtractor
+        // (Q-A), which needs HKHeartbeatSeriesSample rather than this type.
         let read: Set<HKObjectType> = [
-            sdnnType, hrType,
+            sdnnType,
             HKObjectType.workoutType(),
             HKCategoryType(.sleepAnalysis)
         ]

@@ -13,7 +13,7 @@
 
 | # | פריט | סטטוס | בעלים | מה נדרש / הערה |
 |---|------|--------|--------|----------------|
-| 1 | **HealthKit permissions מדויקות** | ✅ | 🟩 | סט הבקשה צומצם ל-**SDNN + heartRate** בלבד (heartbeat/RR הוסר עד ש-RRExtractor ינחת — Q-A), ומחרוזת `NSHealthShareUsageDescription` חודדה לתאום. אימות סופי מול Apple Review ב-🍎 |
+| 1 | **HealthKit permissions מדויקות** | ✅ | 🟩 | סט הבקשה = **SDNN + workouts + sleepAnalysis** — כל טיפוס אכן נקרא בקוד. `heartRate` **הוסר**: הוא נתבקש אך מעולם לא נשאל (בדיוק ההפרה שהסעיף הזה בא למנוע); יחזור רק אם יוטמע סינון מנוחה לפי דופק (דורש כיול על נתונים אמיתיים — Q-B). heartbeat/RR ממתין ל-RRExtractor (Q-A). `NSHealthShareUsageDescription` + מסמכי ה-appstore עודכנו לכלול אימונים ושינה. אימות סופי מול Apple Review ב-🍎 |
 | 2 | **מסך הסבר לפני בקשת HealthKit** | ✅ | 🟩 | Onboarding M2.1 (Value & Privacy) לפני M2.2 (Apple Health); גם מסך `setupRequired` מסביר לפני `requestHealthAccess()` |
 | 3 | **ניסוח Wellness עקבי** | ✅ | 🟩 | guardrails נאכפים: "זהו כלי wellness, לא אבחון רפואי" (onboarding/setup/Settings); "זוהה שינוי מתמשך" ולא "לופ"; אין טענת רגש/אבחנה |
 | 4 | **כתב ויתור רפואי** | 🟢 תוכן מוכן | 🟩 + ☁️/🌐 | קיים באפליקציה; ה-disclaimer לתיאור החנות מוכן ב-[`appstore/APP_STORE_LISTING`](appstore/APP_STORE_LISTING.md) + [`MEDICAL_DEVICE_STATEMENT`](appstore/MEDICAL_DEVICE_STATEMENT.md) |
