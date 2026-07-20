@@ -229,10 +229,12 @@ final class MonitoringCoordinator {
     /// `days`/`ageOffset` let QA preview the `learning` and `unavailable`
     /// states (checklist §A) without waiting on real time; the Settings
     /// button always calls this with the defaults.
-    func loadDemoData(days: Int = 30, ageOffset: TimeInterval = 0) {
+    func loadDemoData(days: Int = 30, ageOffset: TimeInterval = 0, liveEventSlots: Int = 3) {
         isDemoMode = true
         UserDefaults.standard.set(true, forKey: "demoMode")
-        let batch = DemoData.generate(days: days, ageOffset: ageOffset)
+        let batch = DemoData.generate(days: days,
+                                      liveEventSlots: liveEventSlots,
+                                      ageOffset: ageOffset)
         ingest(batch.samples, classifier: batch.classifier)
     }
 

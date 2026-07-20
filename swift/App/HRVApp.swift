@@ -37,6 +37,9 @@ struct HRVApp: App {
                     if !coordinator.isDemoMode {
                         if args.contains("-qaLearning") {
                             coordinator.loadDemoData(days: 3)
+                        } else if args.contains("-qaStable") {
+                            // Demo history with no live episode -> lands on Stable.
+                            coordinator.loadDemoData(liveEventSlots: 0)
                         } else if args.contains("-qaStale") {
                             coordinator.loadDemoData(ageOffset: 20 * 3600)
                         } else if args.contains("-seedDemoData") {
