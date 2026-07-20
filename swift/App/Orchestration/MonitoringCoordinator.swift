@@ -80,7 +80,12 @@ final class MonitoringCoordinator {
         health.startObservingSDNN(
             anchorProvider: { [weak self] key in self?.repository.anchor(for: key) },
             anchorSink: { [weak self] data, key in self?.repository.saveAnchor(data, for: key) },
-            onSamples: { [weak self] samples, classifier in self?.ingest(samples, classifier: classifier) }
+            onSamples: { [weak self] samples, classifier in
+                // HealthKit delivers this on an arbitrary background queue;
+                // ingest() mutates @Observable state that SwiftUI reads, so it
+                // must run on the main actor like every other caller of it.
+                Task { @MainActor in self?.ingest(samples, classifier: classifier) }
+            }
         )
         #endif
         refresh()
@@ -231,6 +236,12 @@ final class MonitoringCoordinator {
             #if canImport(SwiftData)
             try? context.save()
             #endif
+            // Record this re-alert's own tick so restorePipelineState() can
+            // still find a recent AlertRecord and restore cooldown correctly
+            // if the app relaunches mid-episode, past the original firing's
+            // cooldown window.
+            repository.record(AlertRecord(firedAt: event.firedAt, robustZ: event.robustZ,
+                                          rawValueMs: event.rawValueMs, reason: event.reason))
             alerts.fireHRVDrop(event, eventID: open.id)
             return
         }

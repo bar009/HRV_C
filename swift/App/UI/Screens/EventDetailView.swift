@@ -50,7 +50,13 @@ struct EventDetailView: View {
         }
         .environment(\.layoutDirection, .rightToLeft)
         .onAppear {
-            coordinator.markEventSeen(event.id)
+            // Only clear the "new" badge for events that already resolved.
+            // The still-open (live) event must stay unseen here: Attention's
+            // intended exit is the Guided Moment, not merely glancing at this
+            // sheet from the Events list and closing it.
+            if event.durationHours != nil {
+                coordinator.markEventSeen(event.id)
+            }
             relevance = coordinator.savedRelevance(for: event.id).flatMap(Relevance.init(rawValue:))
         }
         .onChange(of: relevance) { _, new in
