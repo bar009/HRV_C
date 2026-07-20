@@ -16,7 +16,7 @@ struct PrimaryButton: View {
                 .frame(maxWidth: .infinity, minHeight: HRVLayout.minimumTouchSize)
                 .background(t.accentPrimary, in: RoundedRectangle(cornerRadius: HRVLayout.radius12, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .pressable()
         .opacity(enabled ? HRVLayout.opacityFull : HRVLayout.opacityPressed)
         .disabled(!enabled)
     }

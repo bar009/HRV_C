@@ -15,6 +15,7 @@ struct StepProgress: View {
                     .frame(height: HRVLayout.space4)
             }
         }
+        .animation(HRVMotion.standard, value: current)
         .accessibilityLabel("שלב \(current) מתוך \(total)")
     }
 }

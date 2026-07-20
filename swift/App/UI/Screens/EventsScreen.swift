@@ -16,6 +16,7 @@ struct EventsScreen: View {
                                message: "כשיזוהה שינוי מתמשך הוא יופיע כאן.",
                                systemImage: "checkmark.circle")
                         .padding(.top, HRVLayout.space8)
+                        .transition(.opacity)
                 } else {
                     ForEach(coordinator.events, id: \.id) { event in
                         EventRow(title: Self.title(for: event.firedAt),
@@ -23,9 +24,11 @@ struct EventsScreen: View {
                                  isNew: !event.seen) {
                             selectedEvent = event
                         }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
             }
+            .animation(HRVMotion.standard, value: coordinator.events.map(\.id))
             .padding(HRVLayout.space20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }

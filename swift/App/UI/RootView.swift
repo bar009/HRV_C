@@ -34,7 +34,7 @@ struct RootView: View {
         // P3: a tapped alert notification lands on Today, where StatusScreen
         // opens the Guided Moment for the pending alert.
         .onChange(of: coordinator.pendingGuidedAlertID) { _, id in
-            if id != nil { tab = .today }
+            if id != nil { withAnimation(HRVMotion.standard) { tab = .today } }
         }
     }
 
@@ -43,11 +43,12 @@ struct RootView: View {
             header(t)
             Group {
                 switch tab {
-                case .today:  StatusScreen()
-                case .trends: TrendsScreen()
-                case .events: EventsScreen()
+                case .today:  StatusScreen().transition(.opacity)
+                case .trends: TrendsScreen().transition(.opacity)
+                case .events: EventsScreen().transition(.opacity)
                 }
             }
+            .animation(HRVMotion.standard, value: tab)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             HRVTabBar(selection: $tab)
         }

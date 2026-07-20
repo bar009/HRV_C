@@ -89,6 +89,15 @@ struct GuidedMomentView: View {
 
     // MARK: content
     @ViewBuilder private var content: some View {
+        Group { stepContent }
+            .transition(.asymmetric(
+                insertion: .move(edge: .trailing).combined(with: .opacity),
+                removal: .move(edge: .leading).combined(with: .opacity)
+            ))
+            .animation(HRVMotion.standard, value: step)
+    }
+
+    @ViewBuilder private var stepContent: some View {
         let t = HRVTheme.resolve(scheme)
         switch step {
         case 1:

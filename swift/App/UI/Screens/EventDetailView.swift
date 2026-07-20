@@ -35,8 +35,10 @@ struct EventDetailView: View {
                         if relevance != nil {
                             Text("התשובה נשמרה")
                                 .font(.hrvCaption).foregroundStyle(t.textTertiary)
+                                .transition(.opacity)
                         }
                     }
+                    .animation(HRVMotion.standard, value: relevance)
                 }
                 .padding(HRVLayout.space24)
                 .frame(maxWidth: .infinity, alignment: .leading)

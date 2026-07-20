@@ -22,10 +22,12 @@ struct StatusCard: View {
                 Image(systemName: kind.symbol)
                     .font(.hrvTitle3)
                     .foregroundStyle(kind.color(t))
+                    .contentTransition(.symbolEffect(.replace))
             }
             Text(title)
                 .font(.hrvTitle)
                 .foregroundStyle(t.textPrimary)
+                .contentTransition(.opacity)
             if let message {
                 Text(message)
                     .font(.hrvCallout)

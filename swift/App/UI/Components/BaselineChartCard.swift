@@ -89,13 +89,16 @@ struct BaselineChartCard: View {
             // a mirrored time axis reads as a broken line.
             .environment(\.layoutDirection, .leftToRight)
             .frame(height: 180)
+            .animation(HRVMotion.gentle, value: dailyPoints.map(\.valueMs))
             .overlay {
                 if samples.isEmpty {
                     Text("אין עדיין נתונים")
                         .font(.hrvCallout)
                         .foregroundStyle(t.textSecondary)
+                        .transition(.opacity)
                 }
             }
+            .animation(HRVMotion.standard, value: samples.isEmpty)
         }
         .padding(HRVLayout.space20)
         .frame(maxWidth: .infinity, alignment: .leading)

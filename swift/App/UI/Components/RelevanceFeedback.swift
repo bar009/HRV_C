@@ -29,12 +29,17 @@ struct RelevanceFeedback: View {
         VStack(spacing: HRVLayout.space8) {
             ForEach(Relevance.allCases) { option in
                 let selected = selection == option
-                Button { selection = option } label: {
+                Button {
+                    withAnimation(HRVMotion.quick) { selection = option }
+                } label: {
                     HStack(spacing: HRVLayout.space12) {
                         Image(systemName: option.symbol).foregroundStyle(t.accentPrimary)
                         Text(option.title).font(.hrvCallout).foregroundStyle(t.textPrimary)
                         Spacer(minLength: 0)
-                        if selected { Image(systemName: "checkmark").foregroundStyle(t.accentPrimary) }
+                        if selected {
+                            Image(systemName: "checkmark").foregroundStyle(t.accentPrimary)
+                                .transition(.scale.combined(with: .opacity))
+                        }
                     }
                     .padding(HRVLayout.space16)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -46,7 +51,7 @@ struct RelevanceFeedback: View {
                                     lineWidth: selected ? HRVLayout.strongStrokeWidth : HRVLayout.hairlineWidth)
                     )
                 }
-                .buttonStyle(.plain)
+                .pressable()
                 .accessibilityAddTraits(selected ? [.isSelected] : [])
             }
         }

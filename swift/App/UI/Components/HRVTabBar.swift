@@ -24,6 +24,7 @@ enum HRVTab: String, CaseIterable, Identifiable {
 struct HRVTabBar: View {
     @Binding var selection: HRVTab
     @Environment(\.colorScheme) private var scheme
+    @Namespace private var indicator
 
     var body: some View {
         let t = HRVTheme.resolve(scheme)
@@ -31,11 +32,20 @@ struct HRVTabBar: View {
             ForEach(HRVTab.allCases) { tab in
                 let active = selection == tab
                 Button {
-                    selection = tab
+                    withAnimation(HRVMotion.standard) { selection = tab }
                 } label: {
                     VStack(spacing: HRVLayout.space4) {
-                        Image(systemName: tab.symbol)
-                            .font(.hrvHeadline)
+                        ZStack {
+                            if active {
+                                Circle()
+                                    .fill(t.accentSoft)
+                                    .frame(width: 32, height: 32)
+                                    .matchedGeometryEffect(id: "tabIndicator", in: indicator)
+                            }
+                            Image(systemName: tab.symbol)
+                                .font(.hrvHeadline)
+                        }
+                        .frame(width: 32, height: 32)
                         Text(tab.title)
                             .font(.hrvCaption)
                     }

@@ -41,6 +41,8 @@ struct MeasuresRow: View {
                 Text(value)
                     .font(.hrvTitle3).fontWeight(.semibold)
                     .foregroundStyle(t.textPrimary)
+                    .contentTransition(.numericText())
+                    .animation(HRVMotion.standard, value: value)
                 Text(unit)
                     .font(.hrvCaption)
                     .foregroundStyle(t.textTertiary)

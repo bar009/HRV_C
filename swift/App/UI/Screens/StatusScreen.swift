@@ -49,13 +49,17 @@ struct StatusScreen: View {
     }
 
     @ViewBuilder private var content: some View {
-        switch coordinator.presentation {
-        case .setupRequired:                 setupRequired
-        case let .learning(day, total):      learning(day: day, total: total)
-        case let .stable(updated):           stable(updated: updated)
-        case let .attention(_, updated):     attention(updated: updated)
-        case .unavailable:                   unavailable
+        Group {
+            switch coordinator.presentation {
+            case .setupRequired:                 setupRequired
+            case let .learning(day, total):      learning(day: day, total: total)
+            case let .stable(updated):           stable(updated: updated)
+            case let .attention(_, updated):     attention(updated: updated)
+            case .unavailable:                   unavailable
+            }
         }
+        .transition(.opacity)
+        .animation(HRVMotion.gentle, value: coordinator.presentation)
     }
 
     // MARK: - states
