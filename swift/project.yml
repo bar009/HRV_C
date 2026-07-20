@@ -23,16 +23,16 @@ schemes:
         HRV-Phone: all
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - HRVAppTests
   HRV:
     build:
       targets:
         HRV: all
     run:
       config: Debug
-    test:
-      config: Debug
-      targets:
-        - HRVAppTests
     archive:
       config: Release
 
@@ -77,15 +77,19 @@ targets:
   # App-layer unit tests (coordinator pipeline, classifier). Hosted by the app
   # because AlertService touches UNUserNotificationCenter, which crashes in an
   # unhosted test runner.
+  # Hosted by HRV-Phone (not HRV): HRV embeds the watch app and its build
+  # depends on the watchOS simulator runtime, which macOS evicts under disk
+  # pressure. Testing app logic shouldn't depend on the watch runtime being
+  # present.
   HRVAppTests:
     type: bundle.unit-test
     platform: iOS
     sources: [AppTests]
     dependencies:
-      - target: HRV
+      - target: HRV-Phone
     settings:
       base:
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/HRV.app/HRV
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/HRV-Phone.app/HRV-Phone
         BUNDLE_LOADER: $(TEST_HOST)
         PRODUCT_BUNDLE_IDENTIFIER: com.bar009.hrvc.tests
         GENERATE_INFOPLIST_FILE: YES

@@ -4,7 +4,7 @@
 import XCTest
 import SwiftData
 import HRVCore
-@testable import HRV
+@testable import HRV_Phone
 
 final class CoordinatorPipelineTests: XCTestCase {
     private var container: ModelContainer!
@@ -78,6 +78,22 @@ final class CoordinatorPipelineTests: XCTestCase {
         coordinator.markEventSeen(alertID)
         guard case .stable = coordinator.presentation else {
             return XCTFail("expected .stable after acknowledging, got \(coordinator.presentation)")
+        }
+    }
+
+    // MARK: QA state preview knobs (checklist §A)
+
+    func testQALearningStateFewerThanSevenDays() {
+        coordinator.loadDemoData(days: 3)
+        guard case .learning = coordinator.presentation else {
+            return XCTFail("expected .learning, got \(coordinator.presentation)")
+        }
+    }
+
+    func testQAStaleStateBeyondStalenessWindow() {
+        coordinator.loadDemoData(ageOffset: 20 * 3600)
+        guard case .unavailable = coordinator.presentation else {
+            return XCTFail("expected .unavailable, got \(coordinator.presentation)")
         }
     }
 

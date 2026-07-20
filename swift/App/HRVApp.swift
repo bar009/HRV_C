@@ -28,11 +28,20 @@ struct HRVApp: App {
                 .environment(coordinator)
                 .task {
                     #if DEBUG
-                    // Dev/UI-test hook: `-seedDemoData` loads Demo Mode on launch
-                    // (the simulator can't be driven through Settings headlessly).
-                    if ProcessInfo.processInfo.arguments.contains("-seedDemoData"),
-                       !coordinator.isDemoMode {
-                        coordinator.loadDemoData()
+                    // Dev/UI-test hooks (simulator can't be driven through
+                    // Settings headlessly): `-seedDemoData` loads the normal
+                    // reviewer demo; `-qaLearning`/`-qaStale` preview the two
+                    // states that need days/staleness to occur naturally
+                    // (QA checklist §A).
+                    let args = ProcessInfo.processInfo.arguments
+                    if !coordinator.isDemoMode {
+                        if args.contains("-qaLearning") {
+                            coordinator.loadDemoData(days: 3)
+                        } else if args.contains("-qaStale") {
+                            coordinator.loadDemoData(ageOffset: 20 * 3600)
+                        } else if args.contains("-seedDemoData") {
+                            coordinator.loadDemoData()
+                        }
                     }
                     #endif
                     await coordinator.start()

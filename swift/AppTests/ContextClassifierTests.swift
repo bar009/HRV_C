@@ -1,6 +1,6 @@
 // Track H -- unit tests for the rest/sleep/active classifier.
 import XCTest
-@testable import HRV
+@testable import HRV_Phone
 
 final class ContextClassifierTests: XCTestCase {
     private let base = Date(timeIntervalSince1970: 1_700_000_000)

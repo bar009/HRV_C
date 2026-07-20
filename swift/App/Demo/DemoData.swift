@@ -22,6 +22,9 @@ enum DemoData {
     ///
     /// The last sample is timestamped `Date()` so it is always inside the
     /// coordinator's staleness window (otherwise Today shows "Unavailable").
+    /// `ageOffset` shifts the whole batch into the past (QA checklist §A: the
+    /// `unavailable` state needs a last sample older than the 6h staleness
+    /// window). Defaults to 0, so every existing call site is unaffected.
     static func generate(days: Int = 30,
                          samplesPerDay: Int = 6,
                          baselineMs: Double = 45,
@@ -29,10 +32,11 @@ enum DemoData {
                          eventStartDay: Int = 20,
                          eventLenDays: Int = 4,
                          liveEventSlots: Int = 3,
-                         dropFraction: Double = 0.45) -> Batch {
+                         dropFraction: Double = 0.45,
+                         ageOffset: TimeInterval = 0) -> Batch {
         let wobble: [Double] = [-3, 0, 3, 1, -2, 2]   // small spread -> MAD > 0
         let slotInterval: TimeInterval = 3 * 3_600
-        let now = Date()
+        let now = Date().addingTimeInterval(-ageOffset)
         var out: [HRVSample] = []
         var workoutIntervals: [DateInterval] = []
         var n = 0

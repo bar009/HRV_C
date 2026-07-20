@@ -206,10 +206,13 @@ final class MonitoringCoordinator {
 
     /// Launch checklist #10 -- Demo Mode: feed synthetic samples so a reviewer sees
     /// the app work without an Apple Watch. Runs through the real (tested) pipeline.
-    func loadDemoData() {
+    /// `days`/`ageOffset` let QA preview the `learning` and `unavailable`
+    /// states (checklist §A) without waiting on real time; the Settings
+    /// button always calls this with the defaults.
+    func loadDemoData(days: Int = 30, ageOffset: TimeInterval = 0) {
         isDemoMode = true
         UserDefaults.standard.set(true, forKey: "demoMode")
-        let batch = DemoData.generate()
+        let batch = DemoData.generate(days: days, ageOffset: ageOffset)
         ingest(batch.samples, classifier: batch.classifier)
     }
 
