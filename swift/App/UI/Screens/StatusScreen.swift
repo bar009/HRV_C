@@ -93,7 +93,8 @@ struct StatusScreen: View {
         VStack(alignment: .leading, spacing: HRVLayout.space16) {
             StatusCard(kind: .stable, eyebrow: "מצב נוכחי", title: "בטווח האישי שלך", timestamp: updated)
             MeasuresRow(latestMs: latestValueMs, baseline: coordinator.baseline)
-            BaselineChartCard(samples: coordinator.recentSamples, baseline: coordinator.baseline)
+            // Charting lives in the Trends tab; Today answers "right now".
+            TodayEventsSection(events: coordinator.todayEvents)
         }
     }
 
@@ -108,6 +109,7 @@ struct StatusScreen: View {
             Text("אפשר להתייחס לזה כהזמנה לעצור, לנוח ולשים לב להרגשה הכללית שלך.")
                 .font(.hrvCallout).foregroundStyle(t.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+            TodayEventsSection(events: coordinator.todayEvents)
         }
     }
 
@@ -122,6 +124,8 @@ struct StatusScreen: View {
             PrimaryButton(title: "בדיקת חיבור והרשאות") {
                 Task { await coordinator.requestHealthAccess() }
             }
+            // A stale reading doesn't mean nothing happened today.
+            TodayEventsSection(events: coordinator.todayEvents)
         }
     }
 }

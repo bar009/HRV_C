@@ -44,6 +44,12 @@ final class MonitoringCoordinator {
 
     var learningDay: Int { engine.distinctDays() }
     var learningTotalDays: Int { 7 }
+    /// Events that fired today -- the Today tab answers "what happened today"
+    /// without making the user scan dates in the Events tab. `events` is
+    /// already newest-first.
+    var todayEvents: [EventRecord] {
+        events.filter { Calendar.current.isDateInToday($0.firedAt) }
+    }
     var hasCompletedSetup: Bool { (isHealthAuthorized || isDemoMode) && hasAnySample }
 
     // ---- internal ----
@@ -169,6 +175,15 @@ final class MonitoringCoordinator {
         #else
         return nil
         #endif
+    }
+
+    /// Charting-only read path. Deliberately separate from `recentSamples`,
+    /// which is detection-critical (restorePipelineState replays it into the
+    /// BaselineEngine and it drives the learning-day count) and must keep its
+    /// 60-day window. Samples are never pruned, so `.distantPast` really does
+    /// return the full history.
+    func samples(since: Date) -> [ProcessedHRVSample] {
+        repository.samples(from: since, to: Date())
     }
 
     func markEventSeen(_ id: UUID) {

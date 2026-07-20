@@ -81,6 +81,26 @@ final class CoordinatorPipelineTests: XCTestCase {
         }
     }
 
+    // MARK: Today tab data
+
+    func testTodayEventsExcludesOlderEpisodes() {
+        loadDemo()
+        // DemoData seeds one live episode (today) + one historical (~11 days ago).
+        XCTAssertEqual(coordinator.events.count, 2)
+        XCTAssertEqual(coordinator.todayEvents.count, 1)
+        let fired = try? XCTUnwrap(coordinator.todayEvents.first).firedAt
+        XCTAssertTrue(Calendar.current.isDateInToday(fired ?? .distantPast))
+    }
+
+    func testSamplesSinceNarrowsToTheRequestedWindow() {
+        loadDemo()
+        let all = coordinator.samples(since: TrendRange.all.cutoff())
+        let day = coordinator.samples(since: TrendRange.day.cutoff())
+        XCTAssertFalse(all.isEmpty)
+        XCTAssertLessThan(day.count, all.count, "a one-day window must be narrower than all history")
+        XCTAssertTrue(day.allSatisfy { $0.timestamp >= TrendRange.day.cutoff().addingTimeInterval(-60) })
+    }
+
     // MARK: QA state preview knobs (checklist §A)
 
     func testQALearningStateFewerThanSevenDays() {

@@ -23,8 +23,8 @@ struct EventDetailView: View {
 
                     measures(t)
 
-                    InformationCard(
-                        title: "מה זה אומר",
+                    CollapsibleNote(
+                        title: "מה זה אומר?",
                         message: "כמה מדידות רצופות היו מחוץ לטווח האישי שלך. זו אינה אבחנה — רק תיעוד עובדתי של השינוי."
                     )
 
