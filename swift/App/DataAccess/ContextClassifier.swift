@@ -11,11 +11,16 @@ struct ContextClassifier {
     /// buffer after a workout must not feed the baseline or fire alerts.
     static let postWorkoutRecovery: TimeInterval = 45 * 60
 
+    /// Workouts as reported, without the recovery padding -- the padded copy
+    /// is what gates samples; this is what we show the user.
+    let workoutIntervals: [DateInterval]
+    let sleepIntervals: [DateInterval]
+
     private let activeIntervals: [DateInterval]
-    private let sleepIntervals: [DateInterval]
 
     /// Workout intervals are extended by the recovery buffer at construction.
     init(workouts: [DateInterval] = [], sleep: [DateInterval] = []) {
+        workoutIntervals = workouts
         activeIntervals = workouts.map {
             DateInterval(start: $0.start, end: $0.end.addingTimeInterval(Self.postWorkoutRecovery))
         }

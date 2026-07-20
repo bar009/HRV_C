@@ -23,6 +23,10 @@ struct EventDetailView: View {
 
                     measures(t)
 
+                    if !event.context.isEmpty {
+                        EventContextCard(context: event.context)
+                    }
+
                     CollapsibleNote(
                         title: "מה זה אומר?",
                         message: "כמה מדידות רצופות היו מחוץ לטווח האישי שלך. זו אינה אבחנה — רק תיעוד עובדתי של השינוי."

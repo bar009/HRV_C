@@ -56,6 +56,10 @@ final class MonitoringCoordinator {
     private var lastSampleAt: Date?
     private var hasAnySample = false
     private var lastAlertID: UUID?
+    /// Latest resting HR and the personal usual, refreshed from HealthKit and
+    /// snapshotted onto an event when it fires. Demo Mode sets them directly.
+    private var restingHeartRate: Double?
+    private var usualRestingHeartRate: Double?
 
     #if canImport(SwiftData)
     init(repository: HRVRepository, context: ModelContext, config: DetectorConfig = DetectorConfig()) {
@@ -93,8 +97,22 @@ final class MonitoringCoordinator {
                 Task { @MainActor in self?.ingest(samples, classifier: classifier) }
             }
         )
+        refreshRestingHeartRate()
         #endif
         refresh()
+    }
+
+    /// Keep the resting-HR snapshot current so an event fired later carries a
+    /// value that was true around that time.
+    private func refreshRestingHeartRate() {
+        #if canImport(HealthKit)
+        health.fetchRestingHeartRate { [weak self] latest, usual in
+            Task { @MainActor in
+                self?.restingHeartRate = latest
+                self?.usualRestingHeartRate = usual
+            }
+        }
+        #endif
     }
 
     /// Core pipeline for a batch of new samples (also the unit-testable seam).
@@ -104,7 +122,7 @@ final class MonitoringCoordinator {
         for s in samples where s.quality == .high {
             let ctx = classifier.context(at: s.timestamp)
             if let event = detector.evaluate(timestamp: s.timestamp, rmssdValue: s.valueMs, context: ctx) {
-                recordEvent(event)
+                recordEvent(event, classifier: classifier)
             }
             if ctx.isRestful { resolveOpenEventIfRecovered(at: s.timestamp, valueMs: s.valueMs) }
             persist(s, label: classifier.label(at: s.timestamp))
@@ -235,11 +253,13 @@ final class MonitoringCoordinator {
         let batch = DemoData.generate(days: days,
                                       liveEventSlots: liveEventSlots,
                                       ageOffset: ageOffset)
+        restingHeartRate = batch.restingHeartRate
+        usualRestingHeartRate = batch.usualRestingHeartRate
         ingest(batch.samples, classifier: batch.classifier)
     }
 
     // MARK: internals
-    private func recordEvent(_ event: AlertEvent) {
+    private func recordEvent(_ event: AlertEvent, classifier: ContextClassifier = ContextClassifier()) {
         // PRODUCT_STATE_MODEL: one sustained deviation == one event. The
         // detector re-alerts every cooldown while the drop persists; those
         // re-alerts extend the still-open episode instead of adding rows.
@@ -262,8 +282,18 @@ final class MonitoringCoordinator {
             alerts.fireHRVDrop(event, eventID: open.id)
             return
         }
+        // Capture the co-occurring facts now, so the event's history keeps what
+        // was true when it fired (facts only -- never a claimed cause).
+        let eventContext = EventContextBuilder.build(
+            eventDate: event.firedAt,
+            sleepIntervals: classifier.sleepIntervals,
+            workoutIntervals: classifier.workoutIntervals,
+            restingHeartRate: restingHeartRate,
+            usualRestingHeartRate: usualRestingHeartRate
+        )
         let rec = EventRecord(firedAt: event.firedAt, robustZ: event.robustZ,
-                              rawValueMs: event.rawValueMs, reason: event.reason)
+                              rawValueMs: event.rawValueMs, reason: event.reason,
+                              context: eventContext)
         lastAlertID = rec.id
         // Keep the in-memory list current mid-batch so recovery inside the same
         // ingest pass (resolveOpenEventIfRecovered) can see and close this event.

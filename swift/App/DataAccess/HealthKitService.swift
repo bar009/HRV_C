@@ -9,6 +9,7 @@ import HRVCore
 final class HealthKitService {
     private let store = HKHealthStore()
     private let sdnnType = HKQuantityType(.heartRateVariabilitySDNN)
+    private let restingHRType = HKQuantityType(.restingHeartRate)
     private let anchorKey = "hrvSDNN"
 
     static var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
@@ -16,14 +17,15 @@ final class HealthKitService {
     func requestAuthorization() async throws {
         // Launch checklist #1 -- request only what the app actually reads today
         // (App Review rejects requesting unused types). SDNN drives detection;
-        // workouts and sleepAnalysis feed context stratification (Track H).
+        // workouts and sleepAnalysis feed context stratification (Track H) and,
+        // with restingHeartRate, the factual co-occurring context shown on an
+        // event. Every type here is genuinely queried.
         //
-        // heartRate is deliberately NOT requested: nothing queries it. It comes
-        // back when it earns its place -- either HR-based restfulness gating
-        // (needs a threshold tuned on real watch data, Q-B) or RRExtractor
-        // (Q-A), which needs HKHeartbeatSeriesSample rather than this type.
+        // Raw `heartRate` stays out: nothing needs per-beat samples. The
+        // heartbeat/RR series returns only with RRExtractor (Q-A).
         let read: Set<HKObjectType> = [
             sdnnType,
+            restingHRType,
             HKObjectType.workoutType(),
             HKCategoryType(.sleepAnalysis)
         ]
@@ -72,6 +74,24 @@ final class HealthKitService {
             }
         }
         store.execute(query)
+    }
+
+    /// Latest resting heart rate and the personal usual (median over the
+    /// window), both in bpm. Apple computes this daily value itself, so this
+    /// is one cheap query rather than a stream of per-beat samples.
+    func fetchRestingHeartRate(days: Int = 30,
+                               completion: @escaping (_ latest: Double?, _ usual: Double?) -> Void) {
+        let start = Date().addingTimeInterval(-Double(days) * 86_400)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: Date())
+        let sort = [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+        store.execute(HKSampleQuery(sampleType: restingHRType, predicate: predicate,
+                                    limit: HKObjectQueryNoLimit, sortDescriptors: sort) { _, samples, _ in
+            let bpm = (samples as? [HKQuantitySample] ?? []).map {
+                $0.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+            }
+            let usual = bpm.count >= 2 ? EventContextBuilder.median(bpm) : nil
+            DispatchQueue.main.async { completion(bpm.first, usual) }
+        })
     }
 
     /// Build the Track H classifier: workouts + sleepAnalysis intervals that

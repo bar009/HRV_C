@@ -92,6 +92,16 @@ final class CoordinatorPipelineTests: XCTestCase {
         XCTAssertTrue(Calendar.current.isDateInToday(fired ?? .distantPast))
     }
 
+    func testDemoEventsCarryCoOccurringContext() {
+        loadDemo()
+        let event = try? XCTUnwrap(coordinator.todayEvents.first)
+        XCTAssertFalse(event?.context.isEmpty ?? true,
+                       "demo events should surface sleep/workout/resting-HR context")
+        // Demo seeds a short (below-usual) night alongside the live episode.
+        XCTAssertTrue(event?.context.sleepIsBelowUsual ?? false)
+        XCTAssertEqual(event?.restingHeartRate, 62)
+    }
+
     func testSamplesSinceNarrowsToTheRequestedWindow() {
         loadDemo()
         let all = coordinator.samples(since: TrendRange.all.cutoff())

@@ -8,6 +8,19 @@ struct EventsScreen: View {
 
     var body: some View {
         let t = HRVTheme.resolve(scheme)
+        content(t)
+            #if DEBUG
+            // QA hook: `-openFirstEvent` opens the newest event's detail sheet
+            // on launch (the sheet can't be reached by tap headlessly).
+            .onAppear {
+                if ProcessInfo.processInfo.arguments.contains("-openFirstEvent") {
+                    selectedEvent = coordinator.events.first
+                }
+            }
+            #endif
+    }
+
+    private func content(_ t: HRVTheme) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: HRVLayout.space12) {
                 Text("אירועים").font(.hrvDisplay).foregroundStyle(t.textPrimary)

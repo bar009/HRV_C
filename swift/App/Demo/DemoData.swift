@@ -9,6 +9,10 @@ enum DemoData {
     struct Batch {
         let samples: [HRVSample]
         let classifier: ContextClassifier
+        /// Stand-ins for the HealthKit resting-HR query, so Demo Mode shows the
+        /// same event context a real user would see.
+        var restingHeartRate: Double = 62
+        var usualRestingHeartRate: Double = 55
     }
 
     /// ~30 days ending *now*:
@@ -39,6 +43,7 @@ enum DemoData {
         let now = Date().addingTimeInterval(-ageOffset)
         var out: [HRVSample] = []
         var workoutIntervals: [DateInterval] = []
+        var sleepIntervals: [DateInterval] = []
         var n = 0
         for d in 0..<days {
             for s in 0..<samplesPerDay {
@@ -63,7 +68,18 @@ enum DemoData {
                                      quality: .high, source: .healthKitDirect))
                 n += 1
             }
+            // One night's sleep per day, ending in the morning. Nights inside
+            // the suppression episodes are short, so the reviewer sees a
+            // below-usual night sitting alongside an event.
+            let morning = now
+                .addingTimeInterval(-Double(days - 1 - d) * 86_400)
+                .addingTimeInterval(-Double(samplesPerDay - 1) * slotInterval)
+            let inEvent = d >= eventStartDay && d < eventStartDay + eventLenDays
+            let hours = inEvent || d == days - 1 ? 4.5 : 7.0
+            sleepIntervals.append(DateInterval(start: morning.addingTimeInterval(-hours * 3600),
+                                               end: morning))
         }
-        return Batch(samples: out, classifier: ContextClassifier(workouts: workoutIntervals))
+        return Batch(samples: out,
+                     classifier: ContextClassifier(workouts: workoutIntervals, sleep: sleepIntervals))
     }
 }
