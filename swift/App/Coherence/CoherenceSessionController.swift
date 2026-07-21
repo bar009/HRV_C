@@ -95,6 +95,29 @@ final class CoherenceSessionController {
         }
     }
 
+    #if DEBUG
+    /// QA hooks (simulator can't tap through a full session): seed history and
+    /// jump straight to the results screen for screenshots.
+    func debugSeedHistory() {
+        guard history.isEmpty else { return }   // onAppear can fire twice
+        let now = Date()
+        let demo = [(min: 4, avg: 72, peak: 88), (min: 3, avg: 55, peak: 71), (min: 5, avg: 61, peak: 80)]
+        for (i, d) in demo.enumerated() {
+            persist(CoherenceSummary(startedAt: now.addingTimeInterval(-Double(i + 1) * 86_400),
+                                     durationSec: Double(d.min * 60),
+                                     avgScore: d.avg, peakScore: d.peak, breathingPace: breathingPace))
+        }
+        reloadHistory()
+    }
+
+    func debugShowResults() {
+        debugSeedHistory()
+        lastSaved = CoherenceSummary(startedAt: Date(), durationSec: 240,
+                                     avgScore: 68, peakScore: 84, breathingPace: breathingPace)
+        phase = .finished
+    }
+    #endif
+
     // MARK: persistence
     private func persist(_ s: CoherenceSummary) {
         #if canImport(SwiftData)

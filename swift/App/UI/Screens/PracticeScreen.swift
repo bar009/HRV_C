@@ -27,9 +27,11 @@ struct PracticeScreen: View {
         // QA hook: `-coherenceAutostart` begins a session on appear (the start
         // button can't be tapped headlessly), for screenshotting the live state.
         .onAppear {
-            if ProcessInfo.processInfo.arguments.contains("-coherenceAutostart"),
-               session.phase == .idle {
-                session.start()
+            let args = ProcessInfo.processInfo.arguments
+            if session.phase == .idle {
+                if args.contains("-coherenceAutostart") { session.start() }
+                else if args.contains("-coherenceResults") { session.debugShowResults() }
+                else if args.contains("-coherenceSeedHistory") { session.debugSeedHistory() }
             }
         }
         #endif
