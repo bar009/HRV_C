@@ -15,8 +15,17 @@ import SwiftData
     var durationHours: Double?   // filled when the sustained change resolves
     var seen: Bool               // isNew == !seen
 
+    // Co-occurring facts captured when the event fired, so history keeps what
+    // was true at the time. Never a claimed cause -- see EventContext.
+    var sleepHoursBefore: Double?
+    var usualSleepHours: Double?
+    var hoursSinceWorkout: Double?
+    var restingHeartRate: Double?
+    var usualRestingHeartRate: Double?
+
     init(id: UUID = UUID(), firedAt: Date, robustZ: Double, rawValueMs: Double,
-         reason: String, durationHours: Double? = nil, seen: Bool = false) {
+         reason: String, durationHours: Double? = nil, seen: Bool = false,
+         context: EventContext = EventContext()) {
         self.id = id
         self.firedAt = firedAt
         self.robustZ = robustZ
@@ -24,6 +33,19 @@ import SwiftData
         self.reason = reason
         self.durationHours = durationHours
         self.seen = seen
+        self.sleepHoursBefore = context.sleepHours
+        self.usualSleepHours = context.usualSleepHours
+        self.hoursSinceWorkout = context.hoursSinceWorkout
+        self.restingHeartRate = context.restingHeartRate
+        self.usualRestingHeartRate = context.usualRestingHeartRate
+    }
+
+    var context: EventContext {
+        EventContext(sleepHours: sleepHoursBefore,
+                     usualSleepHours: usualSleepHours,
+                     hoursSinceWorkout: hoursSinceWorkout,
+                     restingHeartRate: restingHeartRate,
+                     usualRestingHeartRate: usualRestingHeartRate)
     }
 }
 

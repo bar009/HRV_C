@@ -14,6 +14,19 @@ packages:
 # Shared scheme so `xcodebuild -scheme HRV` (mac-xcode.sh) works headless,
 # not only after Xcode auto-creates schemes on first open.
 schemes:
+  # iPhone-only: builds the app WITHOUT the embedded watch app, so it works
+  # even when the watchOS simulator runtime isn't installed (macOS evicts
+  # runtimes under disk pressure). Use the full HRV scheme for watch work.
+  HRV-Phone:
+    build:
+      targets:
+        HRV-Phone: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - HRVAppTests
   HRV:
     build:
       targets:
@@ -42,6 +55,44 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
+
+  # Same app without the watch embed -- see the HRV-Phone scheme comment.
+  HRV-Phone:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: HRVCore
+        product: HRVCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bar009.hrvc
+        INFOPLIST_FILE: Support/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Support/HRV.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+
+  # App-layer unit tests (coordinator pipeline, classifier). Hosted by the app
+  # because AlertService touches UNUserNotificationCenter, which crashes in an
+  # unhosted test runner.
+  # Hosted by HRV-Phone (not HRV): HRV embeds the watch app and its build
+  # depends on the watchOS simulator runtime, which macOS evicts under disk
+  # pressure. Testing app logic shouldn't depend on the watch runtime being
+  # present.
+  HRVAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [AppTests]
+    dependencies:
+      - target: HRV-Phone
+    settings:
+      base:
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/HRV-Phone.app/HRV-Phone
+        BUNDLE_LOADER: $(TEST_HOST)
+        PRODUCT_BUNDLE_IDENTIFIER: com.bar009.hrvc.tests
+        GENERATE_INFOPLIST_FILE: YES
 
   HRVWatch:
     type: application

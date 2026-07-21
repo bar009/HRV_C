@@ -25,6 +25,7 @@ struct SupportActionCard: View {
                 Spacer(minLength: 0)
                 if selected {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(t.accentPrimary)
+                        .transition(.scale.combined(with: .opacity))
                 }
             }
             .padding(HRVLayout.space16)
@@ -36,7 +37,8 @@ struct SupportActionCard: View {
                     .stroke(selected ? t.accentPrimary : t.borderSubtle,
                             lineWidth: selected ? HRVLayout.strongStrokeWidth : HRVLayout.hairlineWidth)
             )
+            .animation(HRVMotion.quick, value: selected)
         }
-        .buttonStyle(.plain)
+        .pressable()
     }
 }

@@ -60,12 +60,19 @@ struct OnboardingFlow: View {
 
     // MARK: step content
     @ViewBuilder private var content: some View {
-        switch step {
-        case 1:  valuePrivacy
-        case 2:  appleHealth
-        case 3:  notifications
-        default: learningBegins
+        Group {
+            switch step {
+            case 1:  valuePrivacy
+            case 2:  appleHealth
+            case 3:  notifications
+            default: learningBegins
+            }
         }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
+        .animation(HRVMotion.standard, value: step)
     }
 
     private var valuePrivacy: some View {

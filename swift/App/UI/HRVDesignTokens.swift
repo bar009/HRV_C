@@ -63,6 +63,17 @@ enum HRVLayout {
     static let opacityPressed: Double = 0.82
 }
 
+/// Shared motion curves. Calm/gentle by design (wellness tone, AGENTS.md) --
+/// no bounce/spring, nothing that reads as playful or alarming.
+enum HRVMotion {
+    /// State/content swaps (tab switches, screen state crossfades).
+    static let standard: Animation = .easeInOut(duration: 0.25)
+    /// Larger, slower transitions (Today's state changes, step flows).
+    static let gentle: Animation = .easeInOut(duration: 0.35)
+    /// Immediate feedback (button press).
+    static let quick: Animation = .easeOut(duration: 0.15)
+}
+
 struct HRVTheme: Equatable {
     let surfaceBackground: Color
     let surfacePrimary: Color

@@ -20,23 +20,46 @@ struct StatusScreen: View {
         }
         .background(t.surfaceBackground)
         .sheet(isPresented: $showGuided) {
-            GuidedMomentView(alertID: currentAlertID)
+            GuidedMomentView(alertID: pendingAlertID ?? currentAlertID)
+        }
+        // P3: notification tap -> open the Guided Moment for that alert.
+        // onAppear covers the cold-launch-from-notification case, where the
+        // pending id is set before this view exists.
+        .onAppear {
+            if pendingAlertID != nil { showGuided = true }
+        }
+        .onChange(of: coordinator.pendingGuidedAlertID) { _, id in
+            if id != nil { showGuided = true }
+        }
+        .onChange(of: showGuided) { _, shown in
+            if !shown { coordinator.pendingGuidedAlertID = nil }
         }
     }
+
+    private var pendingAlertID: UUID? { coordinator.pendingGuidedAlertID }
 
     private var currentAlertID: UUID? {
         if case let .attention(id, _) = coordinator.presentation { return id }
         return nil
     }
 
+    /// Newest sample's raw SDNN in ms -- the concrete number behind the state.
+    private var latestValueMs: Double? {
+        coordinator.recentSamples.max { $0.timestamp < $1.timestamp }?.rawValueMs
+    }
+
     @ViewBuilder private var content: some View {
-        switch coordinator.presentation {
-        case .setupRequired:                 setupRequired
-        case let .learning(day, total):      learning(day: day, total: total)
-        case let .stable(updated):           stable(updated: updated)
-        case let .attention(_, updated):     attention(updated: updated)
-        case .unavailable:                   unavailable
+        Group {
+            switch coordinator.presentation {
+            case .setupRequired:                 setupRequired
+            case let .learning(day, total):      learning(day: day, total: total)
+            case let .stable(updated):           stable(updated: updated)
+            case let .attention(_, updated):     attention(updated: updated)
+            case .unavailable:                   unavailable
+            }
         }
+        .transition(.opacity)
+        .animation(HRVMotion.gentle, value: coordinator.presentation)
     }
 
     // MARK: - states
@@ -69,7 +92,9 @@ struct StatusScreen: View {
     private func stable(updated: Date?) -> some View {
         VStack(alignment: .leading, spacing: HRVLayout.space16) {
             StatusCard(kind: .stable, eyebrow: "מצב נוכחי", title: "בטווח האישי שלך", timestamp: updated)
-            BaselineChartCard(samples: coordinator.recentSamples, baseline: coordinator.baseline)
+            MeasuresRow(latestMs: latestValueMs, baseline: coordinator.baseline)
+            // Charting lives in the Trends tab; Today answers "right now".
+            TodayEventsSection(events: coordinator.todayEvents)
         }
     }
 
@@ -79,10 +104,12 @@ struct StatusScreen: View {
             StatusCard(kind: .attention, eyebrow: "אירוע חדש", title: "זוהה שינוי מתמשך",
                        message: "הדפוס שלך נמצא מתחת לטווח האישי במשך כמה מדידות רצופות.",
                        timestamp: updated)
+            MeasuresRow(latestMs: latestValueMs, baseline: coordinator.baseline)
             PrimaryButton(title: "לבדוק מה קורה עכשיו") { showGuided = true }
             Text("אפשר להתייחס לזה כהזמנה לעצור, לנוח ולשים לב להרגשה הכללית שלך.")
                 .font(.hrvCallout).foregroundStyle(t.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+            TodayEventsSection(events: coordinator.todayEvents)
         }
     }
 
@@ -97,6 +124,8 @@ struct StatusScreen: View {
             PrimaryButton(title: "בדיקת חיבור והרשאות") {
                 Task { await coordinator.requestHealthAccess() }
             }
+            // A stale reading doesn't mean nothing happened today.
+            TodayEventsSection(events: coordinator.todayEvents)
         }
     }
 }

@@ -40,6 +40,6 @@ struct EventRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(t.surfacePrimary, in: RoundedRectangle(cornerRadius: HRVLayout.radius16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .pressable()
     }
 }

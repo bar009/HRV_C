@@ -4,9 +4,23 @@ import SwiftUI
 struct EventsScreen: View {
     @Environment(MonitoringCoordinator.self) private var coordinator
     @Environment(\.colorScheme) private var scheme
+    @State private var selectedEvent: EventRecord?
 
     var body: some View {
         let t = HRVTheme.resolve(scheme)
+        content(t)
+            #if DEBUG
+            // QA hook: `-openFirstEvent` opens the newest event's detail sheet
+            // on launch (the sheet can't be reached by tap headlessly).
+            .onAppear {
+                if ProcessInfo.processInfo.arguments.contains("-openFirstEvent") {
+                    selectedEvent = coordinator.events.first
+                }
+            }
+            #endif
+    }
+
+    private func content(_ t: HRVTheme) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: HRVLayout.space12) {
                 Text("אירועים").font(.hrvDisplay).foregroundStyle(t.textPrimary)
@@ -15,20 +29,26 @@ struct EventsScreen: View {
                                message: "כשיזוהה שינוי מתמשך הוא יופיע כאן.",
                                systemImage: "checkmark.circle")
                         .padding(.top, HRVLayout.space8)
+                        .transition(.opacity)
                 } else {
                     ForEach(coordinator.events, id: \.id) { event in
                         EventRow(title: Self.title(for: event.firedAt),
                                  subtitle: Self.subtitle(for: event),
                                  isNew: !event.seen) {
-                            coordinator.markEventSeen(event.id)
+                            selectedEvent = event
                         }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
             }
+            .animation(HRVMotion.standard, value: coordinator.events.map(\.id))
             .padding(HRVLayout.space20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(t.surfaceBackground)
+        .sheet(item: $selectedEvent) { event in
+            EventDetailView(event: event)
+        }
     }
 
     private static let dateFmt: DateFormatter = {

@@ -4,9 +4,21 @@ import SwiftUI
 /// RTL-first, accent tint. Settings is a separate sheet (not a tab).
 struct RootView: View {
     @Environment(\.colorScheme) private var scheme
+    @Environment(MonitoringCoordinator.self) private var coordinator
     @AppStorage("didOnboard") private var didOnboard = false
     @State private var tab: HRVTab = .today
     @State private var showSettings = false
+
+    init() {
+        #if DEBUG
+        // Dev/UI-test hook: `-startTab trends|events|today` opens on that tab
+        // (launch arguments surface through the UserDefaults argument domain).
+        if let raw = UserDefaults.standard.string(forKey: "startTab"),
+           let initial = HRVTab(rawValue: raw) {
+            _tab = State(initialValue: initial)
+        }
+        #endif
+    }
 
     var body: some View {
         let t = HRVTheme.resolve(scheme)
@@ -19,6 +31,11 @@ struct RootView: View {
         }
         .tint(t.accentPrimary)
         .environment(\.layoutDirection, .rightToLeft)
+        // P3: a tapped alert notification lands on Today, where StatusScreen
+        // opens the Guided Moment for the pending alert.
+        .onChange(of: coordinator.pendingGuidedAlertID) { _, id in
+            if id != nil { withAnimation(HRVMotion.standard) { tab = .today } }
+        }
     }
 
     private func mainShell(_ t: HRVTheme) -> some View {
@@ -26,11 +43,13 @@ struct RootView: View {
             header(t)
             Group {
                 switch tab {
-                case .today:  StatusScreen()
-                case .trends: TrendsScreen()
-                case .events: EventsScreen()
+                case .today:    StatusScreen().transition(.opacity)
+                case .trends:   TrendsScreen().transition(.opacity)
+                case .practice: PracticeScreen().transition(.opacity)
+                case .events:   EventsScreen().transition(.opacity)
                 }
             }
+            .animation(HRVMotion.standard, value: tab)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             HRVTabBar(selection: $tab)
         }

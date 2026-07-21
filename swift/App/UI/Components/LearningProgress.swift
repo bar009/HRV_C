@@ -45,6 +45,7 @@ struct ProgressTrack: View {
                 Capsule().fill(track)
                 Capsule().fill(color)
                     .frame(width: max(0, geo.size.width * progress))
+                    .animation(HRVMotion.gentle, value: progress)
             }
         }
         .frame(height: HRVLayout.space8)

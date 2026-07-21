@@ -9,6 +9,7 @@ struct HRVApp: App {
     // SwiftData container over the stored models (Track C).
     let container: ModelContainer
     @State private var coordinator: MonitoringCoordinator
+    @State private var coherence: CoherenceSessionController
 
     init() {
         do {
@@ -20,13 +21,41 @@ struct HRVApp: App {
         let context = ModelContext(container)
         let repo = SwiftDataRepository(context: context)
         _coordinator = State(initialValue: MonitoringCoordinator(repository: repo, context: context))
+        // Track J (behind FeatureFlags.coherenceEnabled). Simulated source until
+        // a real watch workout stream is validated on device.
+        _coherence = State(initialValue: CoherenceSessionController(
+            source: SimulatedHeartRateSource(coherent: true),
+            context: ModelContext(container)))
     }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(coordinator)
-                .task { await coordinator.start() }
+                .environment(coherence)
+                .task {
+                    #if DEBUG
+                    // Dev/UI-test hooks (simulator can't be driven through
+                    // Settings headlessly): `-seedDemoData` loads the normal
+                    // reviewer demo; `-qaLearning`/`-qaStale` preview the two
+                    // states that need days/staleness to occur naturally
+                    // (QA checklist §A).
+                    let args = ProcessInfo.processInfo.arguments
+                    if !coordinator.isDemoMode {
+                        if args.contains("-qaLearning") {
+                            coordinator.loadDemoData(days: 3)
+                        } else if args.contains("-qaStable") {
+                            // Demo history with no live episode -> lands on Stable.
+                            coordinator.loadDemoData(liveEventSlots: 0)
+                        } else if args.contains("-qaStale") {
+                            coordinator.loadDemoData(ageOffset: 20 * 3600)
+                        } else if args.contains("-seedDemoData") {
+                            coordinator.loadDemoData()
+                        }
+                    }
+                    #endif
+                    await coordinator.start()
+                }
         }
         .modelContainer(container)
     }

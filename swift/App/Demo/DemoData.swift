@@ -4,30 +4,82 @@ import Foundation
 import HRVCore
 
 enum DemoData {
-    /// ~30 days: a healthy baseline with a short injected suppression event, so the
-    /// reviewer sees Learning -> Stable and one Event in history.
+    /// Samples plus the Track H context classifier that matches them, so Demo
+    /// Mode exercises the same stratified pipeline as real HealthKit data.
+    struct Batch {
+        let samples: [HRVSample]
+        let classifier: ContextClassifier
+        /// Stand-ins for the HealthKit resting-HR query, so Demo Mode shows the
+        /// same event context a real user would see.
+        var restingHeartRate: Double = 62
+        var usualRestingHeartRate: Double = 55
+    }
+
+    /// ~30 days ending *now*:
+    /// - a healthy baseline (Learning -> Stable),
+    /// - a deep "workout" dip on `workoutDay` that is tagged active and must
+    ///   NOT fire an event (stratification demo),
+    /// - one resolved suppression event (Events history, with a duration),
+    /// - a suppression over the final slots so ingest ends on the alert tick --
+    ///   the reviewer lands on the live Attention state and can walk the
+    ///   Guided Moment + feedback flow.
+    ///
+    /// The last sample is timestamped `Date()` so it is always inside the
+    /// coordinator's staleness window (otherwise Today shows "Unavailable").
+    /// `ageOffset` shifts the whole batch into the past (QA checklist §A: the
+    /// `unavailable` state needs a last sample older than the 6h staleness
+    /// window). Defaults to 0, so every existing call site is unaffected.
     static func generate(days: Int = 30,
                          samplesPerDay: Int = 6,
                          baselineMs: Double = 45,
-                         eventStartDay: Int = 24,
+                         workoutDay: Int = 10,
+                         eventStartDay: Int = 20,
                          eventLenDays: Int = 4,
-                         dropFraction: Double = 0.45) -> [HRVSample] {
+                         liveEventSlots: Int = 3,
+                         dropFraction: Double = 0.45,
+                         ageOffset: TimeInterval = 0) -> Batch {
         let wobble: [Double] = [-3, 0, 3, 1, -2, 2]   // small spread -> MAD > 0
-        let start = Date().addingTimeInterval(-Double(days) * 86_400)
+        let slotInterval: TimeInterval = 3 * 3_600
+        let now = Date().addingTimeInterval(-ageOffset)
         var out: [HRVSample] = []
+        var workoutIntervals: [DateInterval] = []
+        var sleepIntervals: [DateInterval] = []
         var n = 0
         for d in 0..<days {
             for s in 0..<samplesPerDay {
-                let ts = start.addingTimeInterval(Double(d) * 86_400 + Double(s) * 3 * 3_600)
+                // Walk backwards from `now` so the final slot lands exactly on it.
+                let ts = now
+                    .addingTimeInterval(-Double(days - 1 - d) * 86_400)
+                    .addingTimeInterval(-Double(samplesPerDay - 1 - s) * slotInterval)
                 var v = baselineMs + wobble[n % wobble.count]
-                if d >= eventStartDay && d < eventStartDay + eventLenDays {
+                let inHistoricalEvent = d >= eventStartDay && d < eventStartDay + eventLenDays
+                let inLiveEvent = d == days - 1 && s >= samplesPerDay - liveEventSlots
+                // 3 consecutive suppressed slots would fire an alert
+                // (persistenceWindow) if the classifier didn't exclude them.
+                let inWorkout = d == workoutDay && (2...4).contains(s)
+                if inHistoricalEvent || inLiveEvent || inWorkout {
                     v *= (1 - dropFraction)
+                }
+                if inWorkout {
+                    workoutIntervals.append(DateInterval(start: ts.addingTimeInterval(-10 * 60),
+                                                         end: ts.addingTimeInterval(10 * 60)))
                 }
                 out.append(HRVSample(timestamp: ts, valueMs: v, metric: .sdnnApple,
                                      quality: .high, source: .healthKitDirect))
                 n += 1
             }
+            // One night's sleep per day, ending in the morning. Nights inside
+            // the suppression episodes are short, so the reviewer sees a
+            // below-usual night sitting alongside an event.
+            let morning = now
+                .addingTimeInterval(-Double(days - 1 - d) * 86_400)
+                .addingTimeInterval(-Double(samplesPerDay - 1) * slotInterval)
+            let inEvent = d >= eventStartDay && d < eventStartDay + eventLenDays
+            let hours = inEvent || d == days - 1 ? 4.5 : 7.0
+            sleepIntervals.append(DateInterval(start: morning.addingTimeInterval(-hours * 3600),
+                                               end: morning))
         }
-        return out
+        return Batch(samples: out,
+                     classifier: ContextClassifier(workouts: workoutIntervals, sleep: sleepIntervals))
     }
 }

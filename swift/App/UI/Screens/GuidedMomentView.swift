@@ -35,7 +35,9 @@ struct GuidedMomentView: View {
             .navigationTitle("רגע של בדיקה")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("לא עכשיו") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("לא עכשיו") { skip() }
+                }
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
@@ -66,6 +68,13 @@ struct GuidedMomentView: View {
         if step < total { step += 1 } else { finish() }
     }
 
+    /// PRODUCT_STATE_MODEL: completing or skipping the Guided Moment exits the
+    /// Attention state, so both paths mark the triggering event as seen.
+    private func skip() {
+        if let alertID { coordinator.markEventSeen(alertID) }
+        dismiss()
+    }
+
     private func finish() {
         let plan = (ifText.isEmpty && thenText.isEmpty) ? "" : "אם \(ifText) אז \(thenText)"
         coordinator.saveGuidedResponse(
@@ -74,11 +83,21 @@ struct GuidedMomentView: View {
                            supportChoice: support, ifThenPlan: plan,
                            relevance: relevance?.rawValue ?? "")
         )
+        if let alertID { coordinator.markEventSeen(alertID) }
         dismiss()
     }
 
     // MARK: content
     @ViewBuilder private var content: some View {
+        Group { stepContent }
+            .transition(.asymmetric(
+                insertion: .move(edge: .trailing).combined(with: .opacity),
+                removal: .move(edge: .leading).combined(with: .opacity)
+            ))
+            .animation(HRVMotion.standard, value: step)
+    }
+
+    @ViewBuilder private var stepContent: some View {
         let t = HRVTheme.resolve(scheme)
         switch step {
         case 1:
