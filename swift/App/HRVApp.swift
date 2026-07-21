@@ -9,6 +9,7 @@ struct HRVApp: App {
     // SwiftData container over the stored models (Track C).
     let container: ModelContainer
     @State private var coordinator: MonitoringCoordinator
+    @State private var coherence: CoherenceSessionController
 
     init() {
         do {
@@ -20,12 +21,18 @@ struct HRVApp: App {
         let context = ModelContext(container)
         let repo = SwiftDataRepository(context: context)
         _coordinator = State(initialValue: MonitoringCoordinator(repository: repo, context: context))
+        // Track J (behind FeatureFlags.coherenceEnabled). Simulated source until
+        // a real watch workout stream is validated on device.
+        _coherence = State(initialValue: CoherenceSessionController(
+            source: SimulatedHeartRateSource(coherent: true),
+            context: ModelContext(container)))
     }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(coordinator)
+                .environment(coherence)
                 .task {
                     #if DEBUG
                     // Dev/UI-test hooks (simulator can't be driven through

@@ -2,21 +2,28 @@ import SwiftUI
 
 /// The three primary tabs. Settings is NOT here — it is a separate screen.
 enum HRVTab: String, CaseIterable, Identifiable {
-    case today, trends, events
+    case today, trends, practice, events
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .today:  return "היום"
-        case .trends: return "מגמות"
-        case .events: return "אירועים"
+        case .today:    return "היום"
+        case .trends:   return "מגמות"
+        case .practice: return "תרגול"
+        case .events:   return "אירועים"
         }
     }
     var symbol: String {
         switch self {
-        case .today:  return "waveform.path.ecg"
-        case .trends: return "chart.xyaxis.line"
-        case .events: return "bell"
+        case .today:    return "waveform.path.ecg"
+        case .trends:   return "chart.xyaxis.line"
+        case .practice: return "wind"
+        case .events:   return "bell"
         }
+    }
+
+    /// Tabs actually shown -- the practice (coherence) tab is behind its flag.
+    static var visible: [HRVTab] {
+        allCases.filter { $0 != .practice || FeatureFlags.coherenceEnabled }
     }
 }
 
@@ -29,7 +36,7 @@ struct HRVTabBar: View {
     var body: some View {
         let t = HRVTheme.resolve(scheme)
         HStack(spacing: 0) {
-            ForEach(HRVTab.allCases) { tab in
+            ForEach(HRVTab.visible) { tab in
                 let active = selection == tab
                 Button {
                     withAnimation(HRVMotion.standard) { selection = tab }

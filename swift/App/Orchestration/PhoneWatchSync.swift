@@ -11,6 +11,10 @@ final class PhoneWatchSync: NSObject, WCSessionDelegate {
     /// first refresh() usually runs before WCSession finishes activating.
     private var pendingContext: [String: Any]?
 
+    /// Track J: live beats streamed from the watch's workout session during a
+    /// coherence practice. Set by WatchWorkoutHeartRateSource.
+    var onCoherenceBeat: ((TimeInterval, Double) -> Void)?
+
     override init() {
         super.init()
         guard WCSession.isSupported() else { return }
@@ -43,6 +47,13 @@ final class PhoneWatchSync: NSObject, WCSessionDelegate {
                  error: Error?) {
         DispatchQueue.main.async { self.sendPendingIfActivated() }
     }
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        guard let beat = message["coherenceBeat"] as? [String: Any],
+              let t = beat["t"] as? TimeInterval,
+              let ibiMs = beat["ibiMs"] as? Double else { return }
+        DispatchQueue.main.async { self.onCoherenceBeat?(t, ibiMs) }
+    }
+
     func sessionDidBecomeInactive(_ session: WCSession) {}
     func sessionDidDeactivate(_ session: WCSession) {
         // Re-activate after a watch switch, per Apple's guidance.

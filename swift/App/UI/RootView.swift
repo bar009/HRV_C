@@ -43,9 +43,10 @@ struct RootView: View {
             header(t)
             Group {
                 switch tab {
-                case .today:  StatusScreen().transition(.opacity)
-                case .trends: TrendsScreen().transition(.opacity)
-                case .events: EventsScreen().transition(.opacity)
+                case .today:    StatusScreen().transition(.opacity)
+                case .trends:   TrendsScreen().transition(.opacity)
+                case .practice: PracticeScreen().transition(.opacity)
+                case .events:   EventsScreen().transition(.opacity)
                 }
             }
             .animation(HRVMotion.standard, value: tab)
