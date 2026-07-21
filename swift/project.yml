@@ -11,6 +11,18 @@ packages:
   HRVCore:
     path: .            # this folder holds Package.swift (the verified core)
 
+# Shared scheme so `xcodebuild -scheme HRV` (mac-xcode.sh) works headless,
+# not only after Xcode auto-creates schemes on first open.
+schemes:
+  HRV:
+    build:
+      targets:
+        HRV: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
 targets:
   HRV:
     type: application
@@ -42,6 +54,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bar009.hrvc.watchkitapp
         GENERATE_INFOPLIST_FILE: YES
+        # installd rejects the embedded watch app without this key; Xcode only
+        # injects it implicitly in some build paths, so state it explicitly.
+        INFOPLIST_KEY_WKApplication: YES
         INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.bar009.hrvc
+        TARGETED_DEVICE_FAMILY: "4"
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
