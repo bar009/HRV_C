@@ -20,6 +20,11 @@
     <string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key>
     <string>$(CURRENT_PROJECT_VERSION)</string>
+    <!-- App is fully local and uses no custom encryption (only system HTTPS/
+         none at all), so it is export-compliance exempt. This skips the
+         compliance question on every App Store Connect upload. -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSHealthShareUsageDescription</key>

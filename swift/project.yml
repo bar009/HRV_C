@@ -27,6 +27,8 @@ schemes:
       config: Debug
       targets:
         - HRVAppTests
+    archive:
+      config: Release
   HRV:
     build:
       targets:
@@ -57,6 +59,8 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
 
   # Same app without the watch embed -- see the HRV-Phone scheme comment.
+  # This is the target we ship to TestFlight/App Store (iPhone-only first
+  # build; the watch app follows once its own App ID/profile are set up).
   HRV-Phone:
     type: application
     platform: iOS
@@ -73,6 +77,19 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
+        DEVELOPMENT_TEAM: RVCPD5FJ46
+      configs:
+        # Debug stays automatic so simulator builds/tests need no profile.
+        Debug:
+          CODE_SIGN_STYLE: Automatic
+        # Release = manual signing for headless App Store archive/upload on the
+        # cloud Mac (reuses the HEX distribution cert + build keychain). The
+        # profile UUID is filled once the com.bar009.hrvc App Store profile
+        # is created (see the upload steps).
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution: Bar Cohen (RVCPD5FJ46)"
+          PROVISIONING_PROFILE_SPECIFIER: "HRVC_PROFILE_UUID_PLACEHOLDER"
 
   # App-layer unit tests (coordinator pipeline, classifier). Hosted by the app
   # because AlertService touches UNUserNotificationCenter, which crashes in an
