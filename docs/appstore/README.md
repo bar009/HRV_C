@@ -7,8 +7,8 @@
 > למלא את ה-placeholders, ולשקול בדיקה משפטית — במיוחד מסגור ה-wellness (לא-רפואי).
 
 ## Placeholders למילוי (חוזרים בכל המסמכים)
-`{{LEGAL_NAME}}` · `{{CONTACT_EMAIL}}` · `{{SUPPORT_URL}}` · `{{MARKETING_URL}}` ·
-`{{PRIVACY_URL}}` · `{{EFFECTIVE_DATE}}` · `{{JURISDICTION}}` (ברירת מחדל: ישראל)
+`Trigger Bitter` · `bar16072000@gmail.com` · `{{SUPPORT_URL}}` · `{{MARKETING_URL}}` ·
+`{{PRIVACY_URL}}` · `23 ביולי 2026` · `ישראל` (ברירת מחדל: ישראל)
 
 ## הקבצים → לאן הם הולכים
 

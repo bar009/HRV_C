@@ -37,4 +37,4 @@ file-protected. Nothing is transmitted. See the Privacy Policy: {{PRIVACY_URL}}.
 
 **UI language:** Hebrew, right-to-left.
 
-Contact for review questions: {{CONTACT_EMAIL}}.
+Contact for review questions: bar16072000@gmail.com.
