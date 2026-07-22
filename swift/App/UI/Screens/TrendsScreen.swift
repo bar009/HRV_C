@@ -1,12 +1,27 @@
 import SwiftUI
 import HRVCore
 
-/// Trends (מגמות) tab — the baseline chart over a selectable window
-/// (day/week/month/all) plus a collapsed factual note (P2).
+/// Which trend the מגמות tab is showing. Coherence only appears when Track J
+/// is enabled -- see FeatureFlags.
+enum TrendMetric: String, CaseIterable, Identifiable {
+    case sdnn, coherence
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .sdnn:      "שונות (HRV)"
+        case .coherence: "קוהרנטיות"
+        }
+    }
+}
+
+/// Trends (מגמות) tab — the SDNN baseline chart over a selectable window, and
+/// (behind the flag) a coherence-score trend, plus a collapsed factual note.
 struct TrendsScreen: View {
     @Environment(MonitoringCoordinator.self) private var coordinator
+    @Environment(CoherenceSessionController.self) private var coherence
     @Environment(\.colorScheme) private var scheme
     @State private var range: TrendRange = .month
+    @State private var metric: TrendMetric = .sdnn
     @State private var samples: [ProcessedHRVSample] = []
 
     init() {
@@ -16,6 +31,9 @@ struct TrendsScreen: View {
         if let raw = UserDefaults.standard.string(forKey: "startRange"),
            let initial = TrendRange(rawValue: raw) {
             _range = State(initialValue: initial)
+        }
+        if UserDefaults.standard.string(forKey: "startMetric") == "coherence" {
+            _metric = State(initialValue: .coherence)
         }
         #endif
     }
@@ -30,15 +48,25 @@ struct TrendsScreen: View {
                         .font(.hrvSubheadline).foregroundStyle(t.textSecondary)
                         .contentTransition(.opacity)
                 }
+                if FeatureFlags.coherenceEnabled { metricSelector(t) }
                 RangeSelector(selection: $range)
-                BaselineChartCard(samples: samples, baseline: coordinator.baseline, range: range)
-                CollapsibleNote(
-                    title: "מה זה אומר?",
-                    message: "הטווח מחושב מהמדידות האישיות שלך ומתעדכן בהדרגה עם הגוף. הרצועה מסמנת את הטווח הרגיל עבורך, והקו המקווקו הוא החציון האישי."
-                )
+
+                switch metric {
+                case .sdnn:
+                    BaselineChartCard(samples: samples, baseline: coordinator.baseline, range: range)
+                    CollapsibleNote(
+                        title: "מה זה אומר?",
+                        message: "הטווח מחושב מהמדידות האישיות שלך ומתעדכן בהדרגה עם הגוף. הרצועה מסמנת את הטווח הרגיל עבורך, והקו המקווקו הוא החציון האישי.")
+                case .coherence:
+                    CoherenceTrendCard(sessions: coherenceInRange)
+                    CollapsibleNote(
+                        title: "מה זה אומר?",
+                        message: "כל נקודה היא ציון הקוהרנטיות הממוצע של סשן תרגול. הקווים המקווקווים מסמנים את גבולות הרמות (נמוך/בינוני/גבוה). זהו מדד נפרד מה-HRV — סדר הריתמוס, לא כמות השונות.")
+                }
             }
             .padding(HRVLayout.space20)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(HRVMotion.standard, value: metric)
         }
         .background(t.surfaceBackground)
         // Loading here (not in `body`) keeps the repository fetch off the
@@ -46,9 +74,36 @@ struct TrendsScreen: View {
         .task(id: range) {
             samples = coordinator.samples(since: range.cutoff())
         }
-        // A newly ingested sample should refresh the visible window too.
         .onChange(of: coordinator.recentSamples.count) { _, _ in
             samples = coordinator.samples(since: range.cutoff())
         }
+    }
+
+    private var coherenceInRange: [CoherenceSummary] {
+        let cutoff = range.cutoff()
+        return coherence.history.filter { $0.startedAt >= cutoff }
+    }
+
+    /// Two-item metric toggle. Scales down rather than truncating at large text
+    /// sizes; only two short-ish options, so no menu fallback needed.
+    private func metricSelector(_ t: HRVTheme) -> some View {
+        HStack(spacing: HRVLayout.space4) {
+            ForEach(TrendMetric.allCases) { m in
+                let active = metric == m
+                Button { withAnimation(HRVMotion.standard) { metric = m } } label: {
+                    Text(m.title)
+                        .font(.hrvSubheadline).fontWeight(active ? .semibold : .regular)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                        .foregroundStyle(active ? t.textInverse : t.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, HRVLayout.space8)
+                        .background { if active { Capsule().fill(t.accentPrimary) } }
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(active ? [.isSelected] : [])
+            }
+        }
+        .padding(HRVLayout.space4)
+        .background(t.surfaceSecondary, in: Capsule())
     }
 }
