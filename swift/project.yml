@@ -89,7 +89,7 @@ targets:
         Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution: Bar Cohen (RVCPD5FJ46)"
-          PROVISIONING_PROFILE_SPECIFIER: "HRVC_PROFILE_UUID_PLACEHOLDER"
+          PROVISIONING_PROFILE_SPECIFIER: "56885db6-2675-4866-8d10-f68b8159c893"
 
   # App-layer unit tests (coordinator pipeline, classifier). Hosted by the app
   # because AlertService touches UNUserNotificationCenter, which crashes in an
