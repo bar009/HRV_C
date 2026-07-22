@@ -40,13 +40,13 @@ struct PracticeScreen: View {
     // MARK: idle -> intro + history
     private func intro(_ t: HRVTheme) -> some View {
         VStack(alignment: .leading, spacing: HRVLayout.space16) {
-            Text("תרגול קוהרנטיות")
+            Text("תרגול נשימה")
                 .font(.hrvDisplay).foregroundStyle(t.textPrimary)
-            Text("סשן נשימה קצר ומודרך. תוך כדי, האפליקציה מודדת עד כמה קצב הלב שלך מסודר וקצבי — מדד שנקרא קוהרנטיות. נשימה איטית וסדירה עוזרת להעלות אותו.")
+            Text("סשן נשימה קצר ומודרך. נשמו יחד עם המעגל — פנימה כשהוא גדל, החוצה כשהוא מתכווץ. נשימה איטית וסדירה עוזרת להרגיע את הגוף.")
                 .font(.hrvCallout).foregroundStyle(t.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             InformationCard(title: "איך זה עובד",
-                            message: "נשמו יחד עם המעגל — פנימה כשהוא גדל, החוצה כשהוא מתכווץ. הציון מתעדכן בזמן אמת. אין ציון \"נכון\" — זה תרגול, לא מבחן.")
+                            message: "בחרו מקום נוח, נשמו לפי המעגל, ותנו לזה כמה דקות. אין \"נכון\" — זה תרגול, לא מבחן. עם Apple Watch מחובר, האפליקציה גם תמדוד קוהרנטיות (עד כמה קצב הלב מסודר) בזמן אמת.")
             PrimaryButton(title: "להתחיל תרגול") { session.start() }
             if !session.history.isEmpty { historySection(t) }
         }
@@ -66,8 +66,10 @@ struct PracticeScreen: View {
                             .font(.hrvSubheadline).foregroundStyle(t.textSecondary)
                     }
                     Spacer()
-                    scorePill(t, label: "ממוצע", value: s.avgScore)
-                    scorePill(t, label: "שיא", value: s.peakScore)
+                    if s.peakScore > 0 || s.avgScore > 0 {
+                        scorePill(t, label: "ממוצע", value: s.avgScore)
+                        scorePill(t, label: "שיא", value: s.peakScore)
+                    }
                 }
                 .padding(HRVLayout.space16)
                 .background(t.surfacePrimary, in: RoundedRectangle(cornerRadius: HRVLayout.radius16, style: .continuous))
@@ -90,11 +92,23 @@ struct PracticeScreen: View {
                 .font(.hrvTitle3).foregroundStyle(t.textSecondary)
                 .contentTransition(.numericText())
             BreathingRing(period: session.breathingPace / 2)
-            CoherenceRing(score: session.score, band: session.band)
+            // The live coherence score only appears once real beats are streaming
+            // (Apple Watch). On an iPhone alone this stays a pure breathing pacer.
+            if session.hasCoherence {
+                CoherenceRing(score: session.score, band: session.band)
+                    .transition(.opacity.combined(with: .scale))
+            } else {
+                Text("מדידת קוהרנטיות תופיע עם Apple Watch מחובר")
+                    .font(.hrvCaption).foregroundStyle(t.textTertiary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, HRVLayout.space24)
+            }
             PrimaryButton(title: "סיום") { session.finish() }
         }
         .frame(maxWidth: .infinity)
         .padding(.top, HRVLayout.space16)
+        .animation(HRVMotion.gentle, value: session.hasCoherence)
     }
 
     // MARK: finished -> results
@@ -104,10 +118,14 @@ struct PracticeScreen: View {
                 .font(.hrvDisplay).foregroundStyle(t.textPrimary)
             if let s = session.lastSaved {
                 HStack(spacing: 0) {
-                    resultCell(t, label: "ממוצע", value: "\(s.avgScore)")
-                    divider(t)
-                    resultCell(t, label: "שיא", value: "\(s.peakScore)")
-                    divider(t)
+                    // Coherence cells only when a real measurement was captured;
+                    // otherwise it was a plain breathing session (duration only).
+                    if s.peakScore > 0 || s.avgScore > 0 {
+                        resultCell(t, label: "ממוצע", value: "\(s.avgScore)")
+                        divider(t)
+                        resultCell(t, label: "שיא", value: "\(s.peakScore)")
+                        divider(t)
+                    }
                     resultCell(t, label: "משך", value: "\(Int(s.durationSec))s")
                 }
                 .padding(.vertical, HRVLayout.space16)

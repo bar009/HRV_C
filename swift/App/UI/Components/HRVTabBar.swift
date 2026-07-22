@@ -21,9 +21,10 @@ enum HRVTab: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Tabs actually shown -- the practice (coherence) tab is behind its flag.
+    /// Tabs actually shown. The practice tab is the standalone breathing tool
+    /// (`breathingEnabled`); its live coherence score self-hides without a watch.
     static var visible: [HRVTab] {
-        allCases.filter { $0 != .practice || FeatureFlags.coherenceEnabled }
+        allCases.filter { $0 != .practice || FeatureFlags.breathingEnabled }
     }
 }
 

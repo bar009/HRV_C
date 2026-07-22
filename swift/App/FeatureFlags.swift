@@ -14,6 +14,13 @@ enum FeatureFlags {
         return false
     }
 
+    /// The guided breathing tab. ON: a standalone breathing pacer usable on
+    /// iPhone alone. The live coherence *score* inside it stays hidden until real
+    /// beats stream from an Apple Watch (see `CoherenceSessionController
+    /// .hasCoherence`), so with no watch it is purely a breathing exercise.
+    /// `coherenceEnabled` still gates the coherence *trend* in the Trends tab.
+    static var breathingEnabled: Bool { true }
+
     /// Beat-series metrics (RMSSD/pNN50/SDSD from HKHeartbeatSeriesSample).
     /// ENABLED for TestFlight: it works on iPhone alone (no watch app needed)
     /// and doubles as the Q-A field test -- the "מדדים מפורטים" card appears

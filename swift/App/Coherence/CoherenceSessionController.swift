@@ -20,6 +20,10 @@ final class CoherenceSessionController {
     private(set) var elapsed: TimeInterval = 0
     private(set) var lastSaved: CoherenceSummary?
     private(set) var history: [CoherenceSummary] = []
+    /// True once a real coherence score has come in this session. On an iPhone
+    /// with no paired watch feeding beats, this stays false and the UI runs as
+    /// a plain breathing exercise (no score).
+    private(set) var hasCoherence = false
 
     /// Full breath cycle in seconds -- 10s ≈ the ~0.1 Hz resonance HeartMath
     /// targets, so pacing the user here nudges them toward the coherent peak.
@@ -53,7 +57,7 @@ final class CoherenceSessionController {
 
     // MARK: session lifecycle
     func start() {
-        samples = []; scores = []; score = 0; band = .low; elapsed = 0
+        samples = []; scores = []; score = 0; band = .low; elapsed = 0; hasCoherence = false
         startDate = Date()
         phase = .running
         source.start()
@@ -92,6 +96,7 @@ final class CoherenceSessionController {
             score = result.score
             band = result.band
             scores.append(result.score)
+            hasCoherence = true
         }
     }
 
