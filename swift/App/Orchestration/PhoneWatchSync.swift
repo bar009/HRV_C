@@ -7,6 +7,11 @@ import Foundation
 import WatchConnectivity
 
 final class PhoneWatchSync: NSObject, WCSessionDelegate {
+    /// One WCSession delegate per app, so both the status mirror
+    /// (MonitoringCoordinator) and the coherence beat stream
+    /// (WatchWorkoutHeartRateSource) share this single instance.
+    static let shared = PhoneWatchSync()
+
     /// The newest snapshot; re-sent once activation completes, because the
     /// first refresh() usually runs before WCSession finishes activating.
     private var pendingContext: [String: Any]?
@@ -20,6 +25,22 @@ final class PhoneWatchSync: NSObject, WCSessionDelegate {
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
+    }
+
+    /// Tell the watch to start/stop its coherence workout session (which then
+    /// streams beats back via `coherenceBeat`). `sendMessage` is the
+    /// low-latency path; it needs the watch app reachable (it is during a
+    /// live session).
+    func sendCoherenceCommand(start: Bool) {
+        let session = WCSession.default
+        guard WCSession.isSupported(), session.activationState == .activated else { return }
+        let msg = ["coherenceCommand": start ? "start" : "stop"]
+        if session.isReachable {
+            session.sendMessage(msg, replyHandler: nil, errorHandler: nil)
+        } else {
+            // Fall back to context so a briefly-unreachable watch still gets it.
+            try? session.updateApplicationContext(msg)
+        }
     }
 
     /// Push the latest UI state; `updateApplicationContext` keeps only the

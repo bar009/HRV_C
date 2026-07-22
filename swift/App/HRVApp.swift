@@ -21,10 +21,18 @@ struct HRVApp: App {
         let context = ModelContext(container)
         let repo = SwiftDataRepository(context: context)
         _coordinator = State(initialValue: MonitoringCoordinator(repository: repo, context: context))
-        // Track J (behind FeatureFlags.coherenceEnabled). Simulated source until
-        // a real watch workout stream is validated on device.
+        // Track J (behind FeatureFlags.coherenceEnabled). On a real device the
+        // beats come from the paired watch's workout session; the simulator has
+        // no HKWorkoutSession, so it falls back to a synthetic stream (keeps the
+        // dev/screenshot/test path working).
+        let coherenceSource: HeartRateSource
+        #if targetEnvironment(simulator)
+        coherenceSource = SimulatedHeartRateSource(coherent: true)
+        #else
+        coherenceSource = WatchWorkoutHeartRateSource()
+        #endif
         _coherence = State(initialValue: CoherenceSessionController(
-            source: SimulatedHeartRateSource(coherent: true),
+            source: coherenceSource,
             context: ModelContext(container)))
     }
 

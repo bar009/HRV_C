@@ -22,7 +22,7 @@ final class MonitoringCoordinator {
     private let health = HealthKitService()
     #endif
     #if canImport(WatchConnectivity)
-    private let watchSync = PhoneWatchSync()   // Track E: status mirror
+    private let watchSync = PhoneWatchSync.shared   // Track E: status mirror
     #endif
 
     /// Passive SDNN arrives a few times/day; older than this -> Unavailable.

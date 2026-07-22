@@ -61,14 +61,16 @@ final class WatchWorkoutHeartRateSource: HeartRateSource {
     var onBeat: ((IBISample) -> Void)?
     private let sync: PhoneWatchSync
 
-    init(sync: PhoneWatchSync) {
+    init(sync: PhoneWatchSync = .shared) {
         self.sync = sync
         sync.onCoherenceBeat = { [weak self] t, ibiMs in
             self?.onBeat?(IBISample(t: t, ibiMs: ibiMs))
         }
     }
 
-    func start() {}   // the watch app owns starting/stopping the workout session
-    func stop() {}
+    // Tell the watch to start/stop its HKWorkoutSession; beats arrive via
+    // the sync's onCoherenceBeat callback while it runs.
+    func start() { sync.sendCoherenceCommand(start: true) }
+    func stop() { sync.sendCoherenceCommand(start: false) }
 }
 #endif

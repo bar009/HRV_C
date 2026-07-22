@@ -8,13 +8,33 @@ struct WatchStatusView: View {
 
     var body: some View {
         Group {
-            if store.hasData {
+            if store.measuring {
+                measuring
+            } else if store.hasData {
                 statusBody
             } else {
                 waiting
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    // Track J: a coherence session is running on the phone; the watch is the
+    // sensor. Minimal on purpose — the full breathing UI is on the phone.
+    private var measuring: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "heart.fill")
+                .font(.title2)
+                .foregroundStyle(.pink)
+                .symbolEffect(.pulse)
+            Text("מודד קוהרנטיות…")
+                .font(.caption)
+                .multilineTextAlignment(.center)
+            Text("המשך בטלפון")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
     }
 
     private var waiting: some View {
