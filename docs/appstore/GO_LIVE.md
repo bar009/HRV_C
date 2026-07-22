@@ -39,3 +39,28 @@ TestFlight build 1; enabling the 4th tab requires a deliberate flag change.
 | 7 | **Submit for Review** | user | ⬜ |
 
 **Order matters:** step 5 (device validation) must pass before step 7 (submit).
+
+## Soon / device-pass field-test checklist (do when the watch is on)
+
+The one gate everything advanced depends on. On your iPhone + Apple Watch, via
+TestFlight:
+
+- [ ] **Grant HealthKit** for real (HRV/SDNN, workouts, sleep, resting HR — and
+      beat-to-beat if the metrics build is installed).
+- [ ] **Passive SDNN flows:** wear the watch a day; confirm Today leaves
+      "setup/learning" and shows real values. (SDNN mostly comes from
+      Mindfulness/Breathe + sleep — do a Breathe session to seed it.)
+- [ ] **Alert tuning (Q-B):** watch whether alerts fire sensibly over 3–5 days.
+      If too many/few, adjust `k` / persistenceWindow / cooldown in
+      `DetectorConfig` and re-test.
+- [ ] **Beat-series availability (Q-A):** does the "מדדים מפורטים" card ever
+      appear? It needs `HKHeartbeatSeriesSample`, which mostly comes from ECG /
+      workouts. Note how often it shows — this decides if RMSSD-from-passive is
+      worth keeping.
+- [ ] **File Protection (#6):** confirm the store is unreadable while locked.
+- [ ] **Notification tap → Guided Moment** routes correctly (fire a demo alert).
+- [ ] **Screens only seen via debug hooks:** Settings, onboarding steps 2–4,
+      the 8-step Guided Moment, event detail.
+- [ ] **Coherence (later, needs the watch app):** once the watch app ships,
+      run a practice session and confirm real beats stream + a sane score;
+      calibrate the 0–100 band cutoffs.

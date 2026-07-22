@@ -15,12 +15,9 @@ enum FeatureFlags {
     }
 
     /// Beat-series metrics (RMSSD/pNN50/SDSD from HKHeartbeatSeriesSample).
-    /// v1.1 batch, off for v1 -- needs a real-device field test (Q-A) to confirm
-    /// passive beat series even arrive. DEBUG arg `-metricsOn` for demo.
-    static var advancedMetricsEnabled: Bool {
-        #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-metricsOn") { return true }
-        #endif
-        return false
-    }
+    /// ENABLED for TestFlight: it works on iPhone alone (no watch app needed)
+    /// and doubles as the Q-A field test -- the "מדדים מפורטים" card appears
+    /// only if the device has beat-to-beat series. Display-only, graceful when
+    /// absent. Revisit before public submission if Q-A comes back negative.
+    static var advancedMetricsEnabled: Bool { true }
 }
