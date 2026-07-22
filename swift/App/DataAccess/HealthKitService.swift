@@ -21,15 +21,43 @@ final class HealthKitService {
         // with restingHeartRate, the factual co-occurring context shown on an
         // event. Every type here is genuinely queried.
         //
-        // Raw `heartRate` stays out: nothing needs per-beat samples. The
-        // heartbeat/RR series returns only with RRExtractor (Q-A).
-        let read: Set<HKObjectType> = [
+        // Raw `heartRate` stays out: nothing needs per-beat samples.
+        var read: Set<HKObjectType> = [
             sdnnType,
             restingHRType,
             HKObjectType.workoutType(),
             HKCategoryType(.sleepAnalysis)
         ]
+        // Beat series (RRExtractor path) only when the advanced-metrics feature
+        // is on (v1.1) -- so v1 never requests an unused type.
+        if FeatureFlags.advancedMetricsEnabled {
+            read.insert(HKSeriesType.heartbeat())
+        }
         try await store.requestAuthorization(toShare: [], read: read)
+    }
+
+    /// Latest beat-series metrics (RMSSD/pNN50/SDSD, Deep Dive A.6.1). Reads the
+    /// most recent `HKHeartbeatSeriesSample`, extracts its beat-to-beat times,
+    /// and runs the pure RRExtractor. Device-only: the simulator produces no
+    /// beat series, and passive availability is unproven (Q-A).
+    func fetchLatestBeatMetrics(completion: @escaping (BeatSeriesMetrics?) -> Void) {
+        let sort = [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+        let sampleQuery = HKSampleQuery(sampleType: HKSeriesType.heartbeat(), predicate: nil,
+                                        limit: 1, sortDescriptors: sort) { [weak self] _, samples, _ in
+            guard let self, let series = samples?.first as? HKHeartbeatSeriesSample else {
+                DispatchQueue.main.async { completion(nil) }; return
+            }
+            var beatTimes: [TimeInterval] = []
+            let beatQuery = HKHeartbeatSeriesQuery(heartbeatSeries: series) { _, timeSinceStart, _, done, _ in
+                beatTimes.append(timeSinceStart)
+                if done {
+                    let metrics = RRExtractor.metrics(fromBeatTimes: beatTimes)
+                    DispatchQueue.main.async { completion(metrics) }
+                }
+            }
+            self.store.execute(beatQuery)
+        }
+        store.execute(sampleQuery)
     }
 
     /// Observe SDNN in the background; delivers new HRVSamples plus a context

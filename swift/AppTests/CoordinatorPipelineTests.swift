@@ -111,6 +111,21 @@ final class CoordinatorPipelineTests: XCTestCase {
         XCTAssertTrue(day.allSatisfy { $0.timestamp >= TrendRange.day.cutoff().addingTimeInterval(-60) })
     }
 
+    // MARK: Beat-series metrics (Track: advanced metrics)
+
+    func testDemoPopulatesBeatMetricsWhenFlagOn() {
+        // The flag is DEBUG-arg driven; in a plain test run it's off, so demo
+        // leaves beatMetrics nil. Guard only asserts the wiring is consistent.
+        loadDemo()
+        if FeatureFlags.advancedMetricsEnabled {
+            XCTAssertNotNil(coordinator.beatMetrics)
+            XCTAssertTrue(coordinator.beatMetrics?.isUsable ?? false)
+            XCTAssertFalse(coordinator.rmssdSamples(since: .distantPast).isEmpty)
+        } else {
+            XCTAssertNil(coordinator.beatMetrics)
+        }
+    }
+
     // MARK: QA state preview knobs (checklist §A)
 
     func testQALearningStateFewerThanSevenDays() {

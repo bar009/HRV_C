@@ -93,6 +93,9 @@ struct StatusScreen: View {
         VStack(alignment: .leading, spacing: HRVLayout.space16) {
             StatusCard(kind: .stable, eyebrow: "מצב נוכחי", title: "בטווח האישי שלך", timestamp: updated)
             MeasuresRow(latestMs: latestValueMs, baseline: coordinator.baseline)
+            if let m = coordinator.beatMetrics, m.isUsable {
+                DetailedMetricsCard(metrics: m)
+            }
             // Charting lives in the Trends tab; Today answers "right now".
             TodayEventsSection(events: coordinator.todayEvents)
         }
@@ -105,6 +108,9 @@ struct StatusScreen: View {
                        message: "הדפוס שלך נמצא מתחת לטווח האישי במשך כמה מדידות רצופות.",
                        timestamp: updated)
             MeasuresRow(latestMs: latestValueMs, baseline: coordinator.baseline)
+            if let m = coordinator.beatMetrics, m.isUsable {
+                DetailedMetricsCard(metrics: m)
+            }
             PrimaryButton(title: "לבדוק מה קורה עכשיו") { showGuided = true }
             Text("אפשר להתייחס לזה כהזמנה לעצור, לנוח ולשים לב להרגשה הכללית שלך.")
                 .font(.hrvCallout).foregroundStyle(t.textSecondary)

@@ -13,6 +13,7 @@ Companion to [`../LAUNCH_CHECKLIST.md`](../LAUNCH_CHECKLIST.md) (the 16 items) a
 | Jurisdiction (privacy policy governing law) | **Israel** |
 | Privacy-policy effective date | **23 July 2026** |
 | Coherence (Track J) in **public v1** | **OFF** — v1 is the passive app (3 tabs). Coherence ships in **v1.1** after real-watch validation. It's behind `FeatureFlags.coherenceEnabled` (false in Release). |
+| Beat-series metrics (RMSSD/pNN50/SDSD) in **public v1** | **OFF** — behind `FeatureFlags.advancedMetricsEnabled`. Ships with the v1.1 batch after a real-device field test confirms passive `HKHeartbeatSeriesSample` availability (Q-A). When enabled: add `heartbeat` to the Info.plist HealthKit usage string + the appstore read-set line. |
 | First ship target | **HRV-Phone** (iPhone-only). Watch app follows in a later build. |
 | Export compliance | Exempt — no custom crypto (`ITSAppUsesNonExemptEncryption=false`). |
 

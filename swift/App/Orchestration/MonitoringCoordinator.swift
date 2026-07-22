@@ -60,6 +60,9 @@ final class MonitoringCoordinator {
     /// snapshotted onto an event when it fires. Demo Mode sets them directly.
     private var restingHeartRate: Double?
     private var usualRestingHeartRate: Double?
+    /// Latest beat-series metrics (RMSSD/pNN50/SDSD), when the advanced-metrics
+    /// feature is on and a beat series is available. UI reads this.
+    private(set) var beatMetrics: BeatSeriesMetrics?
 
     #if canImport(SwiftData)
     init(repository: HRVRepository, context: ModelContext, config: DetectorConfig = DetectorConfig()) {
@@ -98,6 +101,7 @@ final class MonitoringCoordinator {
             }
         )
         refreshRestingHeartRate()
+        refreshBeatMetrics()
         #endif
         refresh()
     }
@@ -113,6 +117,36 @@ final class MonitoringCoordinator {
             }
         }
         #endif
+    }
+
+    /// Beat-series metrics (A.6.1), only when the feature is on. Device-only.
+    private func refreshBeatMetrics() {
+        #if canImport(HealthKit)
+        guard FeatureFlags.advancedMetricsEnabled else { return }
+        health.fetchLatestBeatMetrics { [weak self] metrics in
+            Task { @MainActor in
+                self?.beatMetrics = metrics
+                if let rmssd = metrics?.rmssd { self?.persistRmssd(rmssd) }
+                self?.refresh()
+            }
+        }
+        #endif
+    }
+
+    /// Store a computed RMSSD as its own sample stream, so the Trends RMSSD
+    /// view can chart it over time (kept separate from the sdnnApple detection
+    /// samples).
+    private func persistRmssd(_ value: Double, at date: Date = Date()) {
+        repository.save(ProcessedHRVSample(
+            timestamp: date, lnRmssd: log(value), rawValueMs: value,
+            metric: HRVMetric.rmssdComputed.rawValue, quality: SampleQuality.high.rawValue,
+            context: "rest", source: HRVSource.beatSeries.rawValue))
+    }
+
+    /// Computed-RMSSD samples in the window, for the Trends RMSSD chart.
+    func rmssdSamples(since: Date) -> [ProcessedHRVSample] {
+        repository.samples(from: since, to: Date())
+            .filter { $0.metric == HRVMetric.rmssdComputed.rawValue }
     }
 
     /// Core pipeline for a batch of new samples (also the unit-testable seam).
@@ -256,6 +290,19 @@ final class MonitoringCoordinator {
                                       ageOffset: ageOffset)
         restingHeartRate = batch.restingHeartRate
         usualRestingHeartRate = batch.usualRestingHeartRate
+        // Synthetic beat-series metrics so the detailed-metrics UI shows on the
+        // simulator (real beat series need a device).
+        if FeatureFlags.advancedMetricsEnabled {
+            beatMetrics = BeatSeriesMetrics(rmssd: 42, sdnn: 48, pnn50: 18.5, sdsd: 39,
+                                            quality: .high, beatCount: 92)
+            // A sparse RMSSD history (beat series arrive occasionally) so the
+            // Trends RMSSD view has something to draw.
+            let wobble: [Double] = [40, 44, 38, 43, 41, 46, 39, 42]
+            for d in stride(from: 28, through: 0, by: -3) {
+                persistRmssd(wobble[(28 - d) / 3 % wobble.count],
+                             at: Date().addingTimeInterval(-Double(d) * 86_400))
+            }
+        }
         ingest(batch.samples, classifier: batch.classifier)
     }
 

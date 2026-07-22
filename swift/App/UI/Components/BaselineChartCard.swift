@@ -14,6 +14,7 @@ struct BaselineChartCard: View {
     let baseline: Baseline?
     var range: TrendRange = .month
     var title: String = "הטווח האישי שלך"
+    var yAxisLabel: String = "SDNN (ms)"
     @Environment(\.colorScheme) private var scheme
 
     private var points: [TrendPoint] { TrendSeries.points(for: samples, range: range) }
@@ -62,7 +63,7 @@ struct BaselineChartCard: View {
                 }
             }
             .chartXAxis { xAxis }
-            .chartYAxisLabel("SDNN (ms)", position: .topLeading)
+            .chartYAxisLabel(yAxisLabel, position: .topLeading)
             // Time series stay left-to-right even in the RTL app shell --
             // a mirrored time axis reads as a broken line.
             .environment(\.layoutDirection, .leftToRight)

@@ -4,13 +4,19 @@ import HRVCore
 /// Which trend the מגמות tab is showing. Coherence only appears when Track J
 /// is enabled -- see FeatureFlags.
 enum TrendMetric: String, CaseIterable, Identifiable {
-    case sdnn, coherence
+    case sdnn, rmssd, coherence
     var id: String { rawValue }
     var title: String {
         switch self {
         case .sdnn:      "שונות (HRV)"
+        case .rmssd:     "RMSSD"
         case .coherence: "קוהרנטיות"
         }
+    }
+    /// RMSSD only appears when the advanced-metrics feature is on.
+    static var visible: [TrendMetric] {
+        allCases.filter { $0 != .rmssd || FeatureFlags.advancedMetricsEnabled }
+                .filter { $0 != .coherence || FeatureFlags.coherenceEnabled }
     }
 }
 
@@ -32,8 +38,9 @@ struct TrendsScreen: View {
            let initial = TrendRange(rawValue: raw) {
             _range = State(initialValue: initial)
         }
-        if UserDefaults.standard.string(forKey: "startMetric") == "coherence" {
-            _metric = State(initialValue: .coherence)
+        if let raw = UserDefaults.standard.string(forKey: "startMetric"),
+           let initial = TrendMetric(rawValue: raw) {
+            _metric = State(initialValue: initial)
         }
         #endif
     }
@@ -48,7 +55,7 @@ struct TrendsScreen: View {
                         .font(.hrvSubheadline).foregroundStyle(t.textSecondary)
                         .contentTransition(.opacity)
                 }
-                if FeatureFlags.coherenceEnabled { metricSelector(t) }
+                if TrendMetric.visible.count > 1 { metricSelector(t) }
                 RangeSelector(selection: $range)
 
                 switch metric {
@@ -57,6 +64,13 @@ struct TrendsScreen: View {
                     CollapsibleNote(
                         title: "מה זה אומר?",
                         message: "הטווח מחושב מהמדידות האישיות שלך ומתעדכן בהדרגה עם הגוף. הרצועה מסמנת את הטווח הרגיל עבורך, והקו המקווקו הוא החציון האישי.")
+                case .rmssd:
+                    // No personal band -- we don't compute an RMSSD baseline.
+                    BaselineChartCard(samples: rmssdInRange, baseline: nil, range: range,
+                                      title: "RMSSD (ms)", yAxisLabel: "RMSSD (ms)")
+                    CollapsibleNote(
+                        title: "מה זה אומר?",
+                        message: "RMSSD מחושב מרצף פעימות (beat-to-beat) כשזמין, ולכן מופיע בדלילות. הוא רגיש יותר לפעילות הפאראסימפתטית קצרת-הטווח מ-SDNN.")
                 case .coherence:
                     CoherenceTrendCard(sessions: coherenceInRange)
                     CollapsibleNote(
@@ -84,11 +98,15 @@ struct TrendsScreen: View {
         return coherence.history.filter { $0.startedAt >= cutoff }
     }
 
+    private var rmssdInRange: [ProcessedHRVSample] {
+        coordinator.rmssdSamples(since: range.cutoff())
+    }
+
     /// Two-item metric toggle. Scales down rather than truncating at large text
     /// sizes; only two short-ish options, so no menu fallback needed.
     private func metricSelector(_ t: HRVTheme) -> some View {
         HStack(spacing: HRVLayout.space4) {
-            ForEach(TrendMetric.allCases) { m in
+            ForEach(TrendMetric.visible) { m in
                 let active = metric == m
                 Button { withAnimation(HRVMotion.standard) { metric = m } } label: {
                     Text(m.title)
