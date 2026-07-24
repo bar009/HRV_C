@@ -24,6 +24,11 @@ struct EventsScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: HRVLayout.space12) {
                 Text("אירועים").font(.hrvDisplay).foregroundStyle(t.textPrimary)
+                if let avg = coordinator.averageAwarenessSeconds {
+                    AwarenessCard(averageSeconds: avg,
+                                  count: coordinator.awarenessGaps.count,
+                                  isImproving: coordinator.awarenessIsImproving)
+                }
                 if coordinator.events.isEmpty {
                     EmptyState(title: "אין אירועים",
                                message: "כשיזוהה שינוי מתמשך הוא יופיע כאן.",

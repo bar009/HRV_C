@@ -123,7 +123,19 @@ struct StatusScreen: View {
                 DetailedMetricsCard(metrics: m)
             }
             PrimaryButton(title: "לבדוק מה קורה עכשיו") { showGuided = true }
-            Text("אפשר להתייחס לזה כהזמנה לעצור, לנוח ולשים לב להרגשה הכללית שלך.")
+            // Signal-with-shift: the alert always offers a breathing shift in the
+            // same breath, not only a look at what changed.
+            if FeatureFlags.breathingEnabled {
+                Button { coordinator.requestBreathingShift() } label: {
+                    Label("רגע לנשום", systemImage: "wind")
+                        .font(.hrvCallout).fontWeight(.semibold)
+                        .foregroundStyle(t.accentPrimary)
+                        .frame(maxWidth: .infinity, minHeight: HRVLayout.minimumTouchSize)
+                        .background(t.accentSoft.opacity(0.5), in: RoundedRectangle(cornerRadius: HRVLayout.radius12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+            Text("אפשר להתייחס לזה כהזמנה לעצור, לנשום ולשים לב להרגשה הכללית שלך.")
                 .font(.hrvCallout).foregroundStyle(t.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             TodayEventsSection(events: coordinator.todayEvents)

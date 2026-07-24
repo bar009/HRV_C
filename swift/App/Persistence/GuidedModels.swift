@@ -14,6 +14,10 @@ import SwiftData
     var reason: String
     var durationHours: Double?   // filled when the sustained change resolves
     var seen: Bool               // isNew == !seen
+    /// When the user first acknowledged the event. `seenAt - firedAt` is the
+    /// "time to awareness" progress metric (strategy memo). Defaulted nil so
+    /// this is a lightweight additive migration over existing rows.
+    var seenAt: Date?
 
     // Co-occurring facts captured when the event fired, so history keeps what
     // was true at the time. Never a claimed cause -- see EventContext.

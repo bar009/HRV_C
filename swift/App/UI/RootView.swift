@@ -36,6 +36,13 @@ struct RootView: View {
         .onChange(of: coordinator.pendingGuidedAlertID) { _, id in
             if id != nil { withAnimation(HRVMotion.standard) { tab = .today } }
         }
+        // Signal-with-shift: the alert offers a breathing shift -> jump there.
+        .onChange(of: coordinator.pendingBreathingShift) { _, shift in
+            if shift {
+                withAnimation(HRVMotion.standard) { tab = .practice }
+                coordinator.pendingBreathingShift = false
+            }
+        }
     }
 
     private func mainShell(_ t: HRVTheme) -> some View {

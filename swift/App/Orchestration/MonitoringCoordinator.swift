@@ -70,6 +70,11 @@ final class MonitoringCoordinator {
     /// Set when the user taps an alert notification (UI_WIRING P3); RootView
     /// switches to Today and StatusScreen opens the Guided Moment, then clears it.
     var pendingGuidedAlertID: UUID?
+    /// Signal-with-shift (strategy memo): a signal is never delivered without
+    /// offering the breathing shift in the same breath. Set from the attention
+    /// card; RootView switches to the breathing tab, then clears it.
+    var pendingBreathingShift = false
+    func requestBreathingShift() { pendingBreathingShift = true }
     /// Demo Mode (launch checklist #10): synthetic data stands in for HealthKit,
     /// so the setup gate must not require a real authorization. Persisted so the
     /// stored demo samples still render after a relaunch.
@@ -316,6 +321,7 @@ final class MonitoringCoordinator {
     func markEventSeen(_ id: UUID) {
         if let e = events.first(where: { $0.id == id }) {
             e.seen = true
+            if e.seenAt == nil { e.seenAt = Date() }   // time-to-awareness
             #if canImport(SwiftData)
             try? context.save()
             #endif
@@ -389,6 +395,12 @@ final class MonitoringCoordinator {
             try? context.save()
             reloadCalmMoments()
         }
+        // Seed a time-to-awareness sample on resolved events so the progress
+        // card renders in demo (the user "noticed" a few hours after it fired).
+        for e in events where e.durationHours != nil && e.seenAt == nil {
+            e.seenAt = e.firedAt.addingTimeInterval(3 * 3600)
+        }
+        try? context.save()
         #endif
         ingest(batch.samples, classifier: batch.classifier)
     }
@@ -461,6 +473,22 @@ final class MonitoringCoordinator {
         let from = Date().addingTimeInterval(-Double(engine.windowDays) * 86_400)
         recentSamples = repository.samples(from: from, to: Date())
     }
+
+    // MARK: time-to-awareness (progress metric)
+
+    /// Gaps (seconds) between an event firing and being acknowledged, oldest
+    /// first — for the awareness progress metric.
+    var awarenessGaps: [TimeInterval] {
+        events
+            .compactMap { e -> (Date, TimeInterval)? in
+                guard let seenAt = e.seenAt else { return nil }
+                return (e.firedAt, seenAt.timeIntervalSince(e.firedAt))
+            }
+            .sorted { $0.0 < $1.0 }
+            .map(\.1)
+    }
+    var averageAwarenessSeconds: TimeInterval? { AwarenessMetrics.average(awarenessGaps) }
+    var awarenessIsImproving: Bool? { AwarenessMetrics.isImproving(chronological: awarenessGaps) }
 
     // MARK: personal calibration (gender)
 
