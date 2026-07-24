@@ -14,14 +14,13 @@ final class HealthKitService {
 
     static var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
 
-    func requestAuthorization() async throws {
-        // Launch checklist #1 -- request only what the app actually reads today
-        // (App Review rejects requesting unused types). SDNN drives detection;
-        // workouts and sleepAnalysis feed context stratification (Track H) and,
-        // with restingHeartRate, the factual co-occurring context shown on an
-        // event. Every type here is genuinely queried.
-        //
-        // Raw `heartRate` stays out: nothing needs per-beat samples.
+    /// The single source of truth for what we read. Launch checklist #1 -- request
+    /// only what the app actually reads today (App Review rejects unused types).
+    /// SDNN drives detection; workouts and sleepAnalysis feed context
+    /// stratification (Track H) and, with restingHeartRate, the factual
+    /// co-occurring context shown on an event. Every type here is genuinely
+    /// queried. Raw `heartRate` stays out: nothing needs per-beat samples.
+    private var readTypes: Set<HKObjectType> {
         var read: Set<HKObjectType> = [
             sdnnType,
             restingHRType,
@@ -33,7 +32,50 @@ final class HealthKitService {
         if FeatureFlags.advancedMetricsEnabled {
             read.insert(HKSeriesType.heartbeat())
         }
-        try await store.requestAuthorization(toShare: [], read: read)
+        return read
+    }
+
+    func requestAuthorization() async throws {
+        try await store.requestAuthorization(toShare: [], read: readTypes)
+    }
+
+    /// Whether iOS would still present the permission sheet. `.shouldRequest`
+    /// means the prompt hasn't been shown yet (requesting will show UI);
+    /// `.unnecessary` means it was already asked -- iOS never re-prompts, so any
+    /// change must be made in Settings. This is the reliable signal the
+    /// diagnostics screen needs, since read-grant status itself is opaque.
+    func authorizationRequestStatus() async -> HKAuthorizationRequestStatus {
+        await withCheckedContinuation { cont in
+            store.getRequestStatusForAuthorization(toShare: [], read: readTypes) { status, _ in
+                cont.resume(returning: status)
+            }
+        }
+    }
+
+    /// A one-shot read test over the last `days` days: how many SDNN and resting
+    /// HR samples actually come back, and the newest timestamp of each. For read
+    /// types Apple never reports grant status, so *actually reading* is the only
+    /// honest way to tell the user whether the connection works.
+    func probeRecentData(days: Int = 7) async -> HealthProbe {
+        async let sdnn = countAndLatest(of: sdnnType, days: days)
+        async let hr = countAndLatest(of: restingHRType, days: days)
+        let (sdnnCount, latestSDNN) = await sdnn
+        let (hrCount, latestHR) = await hr
+        return HealthProbe(sdnnCount: sdnnCount, restingHRCount: hrCount,
+                           latestSDNN: latestSDNN, latestRestingHR: latestHR)
+    }
+
+    private func countAndLatest(of type: HKSampleType, days: Int) async -> (Int, Date?) {
+        let start = Date().addingTimeInterval(-Double(days) * 86_400)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: Date())
+        let sort = [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+        return await withCheckedContinuation { cont in
+            store.execute(HKSampleQuery(sampleType: type, predicate: predicate,
+                                        limit: HKObjectQueryNoLimit, sortDescriptors: sort) { _, samples, _ in
+                let s = samples ?? []
+                cont.resume(returning: (s.count, s.first?.endDate))
+            })
+        }
     }
 
     /// Latest beat-series metrics (RMSSD/pNN50/SDSD, Deep Dive A.6.1). Reads the

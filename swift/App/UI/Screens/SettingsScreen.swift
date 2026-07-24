@@ -12,15 +12,8 @@ struct SettingsScreen: View {
             List {
                 Section("חיבור") {
                     NavigationLink {
-                        SettingsDetail(
-                            title: "HealthKit והרשאות",
-                            text: coordinator.isHealthAuthorized
-                                ? "הגישה ל-Apple Health מאושרת. האפליקציה קוראת HRV ודופק כדי לבנות טווח אישי."
-                                : "האפליקציה צריכה גישה ל-Apple Health (קריאה בלבד) כדי לבנות טווח אישי ולזהות שינוי מתמשך.",
-                            actionTitle: coordinator.isHealthAuthorized ? nil : "אפשר גישה ל-Health",
-                            action: { Task { await coordinator.requestHealthAccess() } }
-                        )
-                    } label: { Label("HealthKit והרשאות", systemImage: "heart.text.square") }
+                        ConnectionDiagnosticsView()
+                    } label: { Label("חיבור והרשאות", systemImage: "heart.text.square") }
 
                     NavigationLink {
                         SettingsDetail(

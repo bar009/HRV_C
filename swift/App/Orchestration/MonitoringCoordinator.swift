@@ -7,6 +7,36 @@ import HRVCore
 #if canImport(SwiftData)
 import SwiftData
 #endif
+#if canImport(WatchConnectivity)
+import WatchConnectivity
+#endif
+
+/// Result of the Settings connection/permissions self-test. HealthKit-free so the
+/// diagnostics view stays decoupled -- the coordinator maps HealthKit's opaque
+/// status into `prompt`, and `probe` reports what a real read actually returned.
+struct HealthProbe: Sendable {
+    let sdnnCount: Int
+    let restingHRCount: Int
+    let latestSDNN: Date?
+    let latestRestingHR: Date?
+    static let empty = HealthProbe(sdnnCount: 0, restingHRCount: 0, latestSDNN: nil, latestRestingHR: nil)
+}
+
+/// Whether tapping "allow" will still show the iOS permission sheet.
+enum PermissionPromptState: Sendable {
+    case canPrompt      // not asked yet -- requesting will show the sheet
+    case alreadyAsked   // shown once already; iOS never re-prompts -> use Settings
+    case unknown        // HealthKit unavailable / indeterminate
+}
+
+struct ConnectionDiagnostic: Sendable {
+    let healthAvailable: Bool
+    let prompt: PermissionPromptState
+    let probe: HealthProbe
+    let watchPaired: Bool
+    let watchAppInstalled: Bool
+    let watchReachable: Bool
+}
 
 @Observable
 final class MonitoringCoordinator {
@@ -193,6 +223,43 @@ final class MonitoringCoordinator {
     }
 
     func requestNotifications() async { await alerts.requestAuthorization() }
+
+    /// The Settings "connection & permissions" self-test. Actually reads Health
+    /// data (the only honest signal, since read-grant status is opaque) and
+    /// reports the Apple Watch link, so the button always does something visible.
+    func runConnectionDiagnostic() async -> ConnectionDiagnostic {
+        let (paired, installed, reachable) = watchStatus()
+        #if canImport(HealthKit)
+        guard HealthKitService.isAvailable else {
+            return ConnectionDiagnostic(healthAvailable: false, prompt: .unknown, probe: .empty,
+                                        watchPaired: paired, watchAppInstalled: installed, watchReachable: reachable)
+        }
+        let prompt: PermissionPromptState
+        switch await health.authorizationRequestStatus() {
+        case .shouldRequest: prompt = .canPrompt
+        case .unnecessary:   prompt = .alreadyAsked
+        @unknown default:    prompt = .unknown
+        }
+        let probe = await health.probeRecentData()
+        // A successful read is the closest thing to proof of read access.
+        if probe.sdnnCount > 0 || probe.restingHRCount > 0 { isHealthAuthorized = true }
+        return ConnectionDiagnostic(healthAvailable: true, prompt: prompt, probe: probe,
+                                    watchPaired: paired, watchAppInstalled: installed, watchReachable: reachable)
+        #else
+        return ConnectionDiagnostic(healthAvailable: false, prompt: .unknown, probe: .empty,
+                                    watchPaired: paired, watchAppInstalled: installed, watchReachable: reachable)
+        #endif
+    }
+
+    private func watchStatus() -> (paired: Bool, installed: Bool, reachable: Bool) {
+        #if canImport(WatchConnectivity)
+        guard WCSession.isSupported() else { return (false, false, false) }
+        let s = WCSession.default
+        return (s.isPaired, s.isWatchAppInstalled, s.isReachable)
+        #else
+        return (false, false, false)
+        #endif
+    }
 
     func saveGuidedResponse(_ response: GuidedResponse) {
         #if canImport(SwiftData)
