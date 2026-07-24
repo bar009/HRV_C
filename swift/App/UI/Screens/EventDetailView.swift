@@ -15,7 +15,7 @@ struct EventDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: HRVLayout.space16) {
-                    Text(EventsScreen.title(for: event.firedAt))
+                    Text(EventsScreen.title(for: event))
                         .font(.hrvDisplay).foregroundStyle(t.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(Self.timeFmt.string(from: event.firedAt))
@@ -29,7 +29,7 @@ struct EventDetailView: View {
 
                     CollapsibleNote(
                         title: "מה זה אומר?",
-                        message: "כמה מדידות רצופות היו מחוץ לטווח האישי שלך. זו אינה אבחנה — רק תיעוד עובדתי של השינוי."
+                        message: "\(EventShapePresentation.description(event.shape)) כמה מדידות רצופות היו מחוץ לטווח האישי שלך. זו אינה אבחנה — רק תיעוד עובדתי של השינוי."
                     )
 
                     VStack(alignment: .leading, spacing: HRVLayout.space8) {
@@ -74,6 +74,8 @@ struct EventDetailView: View {
     private func measures(_ t: HRVTheme) -> some View {
         VStack(spacing: 0) {
             row(t, label: "המדידה בזמן האירוע", value: "\(Int(event.rawValueMs.rounded())) ms")
+            divider(t)
+            row(t, label: "סוג השינוי", value: EventShapePresentation.label(event.shape))
             divider(t)
             row(t, label: "עומק השינוי", value: String(format: "%.1f סטיות מתחת לטווח", abs(event.robustZ)))
             divider(t)

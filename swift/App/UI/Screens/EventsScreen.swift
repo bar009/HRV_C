@@ -32,7 +32,7 @@ struct EventsScreen: View {
                         .transition(.opacity)
                 } else {
                     ForEach(coordinator.events, id: \.id) { event in
-                        EventRow(title: Self.title(for: event.firedAt),
+                        EventRow(title: Self.title(for: event),
                                  subtitle: Self.subtitle(for: event),
                                  isNew: !event.seen) {
                             selectedEvent = event
@@ -58,9 +58,10 @@ struct EventsScreen: View {
         return f
     }()
 
-    static func title(for date: Date) -> String {
+    static func title(for event: EventRecord) -> String {
+        let date = event.firedAt
         let day = Calendar.current.isDateInToday(date) ? "היום" : dateFmt.string(from: date)
-        return "\(day) · שינוי מתמשך"
+        return "\(day) · \(EventShapePresentation.label(event.shape))"
     }
     static func subtitle(for event: EventRecord) -> String {
         if let h = event.durationHours { return "נמשך \(Int(h.rounded())) שעות" }

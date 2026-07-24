@@ -100,12 +100,17 @@ final class MonitoringCoordinator {
     #if canImport(SwiftData)
     init(repository: HRVRepository, context: ModelContext, config: DetectorConfig = DetectorConfig()) {
         let engine = BaselineEngine()
+        // Personal calibration: route the stored sex through CalibrationProfiles
+        // (neutral today — the personal baseline self-normalizes — but this is
+        // the hook for sex-specific tuning once the study provides it).
+        let resolved = CalibrationProfiles.config(
+            for: CalibrationProfile(sex: Self.storedBiologicalSex), base: config)
 
         self.repository = repository
         self.context = context
-        self.config = config
+        self.config = resolved
         self.engine = engine
-        self.detector = AnomalyDetector(engine: engine, config: config)
+        self.detector = AnomalyDetector(engine: engine, config: resolved)
         reloadStored()
         restorePipelineState()
         refresh()
@@ -455,6 +460,20 @@ final class MonitoringCoordinator {
         #endif
         let from = Date().addingTimeInterval(-Double(engine.windowDays) * 86_400)
         recentSamples = repository.samples(from: from, to: Date())
+    }
+
+    // MARK: personal calibration (gender)
+
+    private static let sexKey = "biologicalSex"
+    static var storedBiologicalSex: BiologicalSex {
+        BiologicalSex(rawValue: UserDefaults.standard.string(forKey: sexKey) ?? "") ?? .unspecified
+    }
+    /// Read/write the calibration sex. Writing persists it; because the config
+    /// is neutral today the change applies to detection from the next launch
+    /// (documented in CalibrationProfiles), so nothing is rebuilt live.
+    var biologicalSex: BiologicalSex {
+        get { Self.storedBiologicalSex }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: Self.sexKey) }
     }
 
     // MARK: calm pole (map both poles)

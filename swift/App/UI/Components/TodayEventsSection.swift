@@ -25,7 +25,7 @@ struct TodayEventsSection: View {
                     .transition(.opacity)
             } else {
                 ForEach(events, id: \.id) { event in
-                    EventRow(title: Self.title(for: event.firedAt),
+                    EventRow(title: Self.title(for: event),
                              subtitle: EventsScreen.subtitle(for: event),
                              isNew: !event.seen) {
                         selectedEvent = event
@@ -42,8 +42,8 @@ struct TodayEventsSection: View {
     }
 
     /// Time of day, since every row here is from today.
-    static func title(for date: Date) -> String {
-        "\(timeFmt.string(from: date)) · שינוי מתמשך"
+    static func title(for event: EventRecord) -> String {
+        "\(timeFmt.string(from: event.firedAt)) · \(EventShapePresentation.label(event.shape))"
     }
 
     private static let timeFmt: DateFormatter = {

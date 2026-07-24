@@ -1,4 +1,5 @@
 import SwiftUI
+import HRVCore
 
 /// Settings (separate screen, not a tab): HealthKit · Notifications · Privacy ·
 /// About · Wellness (P4). Factual, local-first language.
@@ -6,6 +7,10 @@ struct SettingsScreen: View {
     @Environment(MonitoringCoordinator.self) private var coordinator
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
+
+    private var sexBinding: Binding<BiologicalSex> {
+        Binding(get: { coordinator.biologicalSex }, set: { coordinator.biologicalSex = $0 })
+    }
 
     var body: some View {
         NavigationStack {
@@ -23,6 +28,18 @@ struct SettingsScreen: View {
                             action: { Task { await coordinator.requestNotifications() } }
                         )
                     } label: { Label("התראות", systemImage: "bell") }
+                }
+
+                Section {
+                    Picker("מין ביולוגי", selection: sexBinding) {
+                        Text("לא צוין").tag(BiologicalSex.unspecified)
+                        Text("נקבה").tag(BiologicalSex.female)
+                        Text("זכר").tag(BiologicalSex.male)
+                    }
+                } header: {
+                    Text("כיול אישי")
+                } footer: {
+                    Text("שונות קצב הלב שונה בין המינים. הטווח האישי שלך כבר מסתגל אליך אישית; פרט זה נשמר כדי לדייק את הכיול בהמשך. אופציונלי, נשמר במכשיר בלבד.")
                 }
 
                 Section("פרטיות") {
