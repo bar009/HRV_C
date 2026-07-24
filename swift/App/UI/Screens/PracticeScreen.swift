@@ -66,9 +66,9 @@ struct PracticeScreen: View {
                             .font(.hrvSubheadline).foregroundStyle(t.textSecondary)
                     }
                     Spacer()
-                    if s.peakScore > 0 || s.avgScore > 0 {
-                        scorePill(t, label: "ממוצע", value: s.avgScore)
-                        scorePill(t, label: "שיא", value: s.peakScore)
+                    if s.coherencePct > 0 || s.peakLevel > 0 {
+                        scorePill(t, label: "בקוהרנטיות", value: "\(s.coherencePct)%")
+                        scorePill(t, label: "שיא", value: "\(s.peakLevel)/10")
                     }
                 }
                 .padding(HRVLayout.space16)
@@ -77,26 +77,36 @@ struct PracticeScreen: View {
         }
     }
 
-    private func scorePill(_ t: HRVTheme, label: String, value: Int) -> some View {
+    private func scorePill(_ t: HRVTheme, label: String, value: String) -> some View {
         VStack(spacing: HRVLayout.space2) {
-            Text("\(value)").font(.hrvTitle3).fontWeight(.semibold).foregroundStyle(t.textPrimary)
+            Text(value).font(.hrvTitle3).fontWeight(.semibold).foregroundStyle(t.textPrimary)
             Text(label).font(.hrvCaption).foregroundStyle(t.textTertiary)
         }
         .frame(minWidth: 52)
     }
 
-    // MARK: running -> pacer + live score
+    // MARK: running -> pacer + live data + level
     private func active(_ t: HRVTheme) -> some View {
         VStack(spacing: HRVLayout.space24) {
             Text(Self.clock(session.elapsed))
                 .font(.hrvTitle3).foregroundStyle(t.textSecondary)
                 .contentTransition(.numericText())
             BreathingRing(period: session.breathingPace / 2)
-            // The live coherence score only appears once real beats are streaming
-            // (Apple Watch). On an iPhone alone this stays a pure breathing pacer.
+            // The coherence level appears once the first reading is in; the live
+            // data panel shows from the first beat, so the ~30s warm-up doesn't
+            // look like "just a moving ring". With no beats at all (iPhone, no
+            // watch) this stays a pure breathing pacer.
             if session.hasCoherence {
-                CoherenceRing(score: session.score, band: session.band)
+                CoherenceRing(level: session.level, band: session.band)
                     .transition(.opacity.combined(with: .scale))
+            }
+            if session.isReceivingBeats {
+                LiveBeatPanel(bpm: session.currentBPM,
+                              beatCount: session.beatCount,
+                              recentBPM: session.recentBPM,
+                              firstReadingProgress: session.firstReadingProgress,
+                              hasReading: session.hasCoherence)
+                    .transition(.opacity)
             } else {
                 Text("מדידת קוהרנטיות תופיע עם Apple Watch מחובר")
                     .font(.hrvCaption).foregroundStyle(t.textTertiary)
@@ -109,6 +119,7 @@ struct PracticeScreen: View {
         .frame(maxWidth: .infinity)
         .padding(.top, HRVLayout.space16)
         .animation(HRVMotion.gentle, value: session.hasCoherence)
+        .animation(HRVMotion.gentle, value: session.isReceivingBeats)
     }
 
     // MARK: finished -> results
@@ -120,10 +131,10 @@ struct PracticeScreen: View {
                 HStack(spacing: 0) {
                     // Coherence cells only when a real measurement was captured;
                     // otherwise it was a plain breathing session (duration only).
-                    if s.peakScore > 0 || s.avgScore > 0 {
-                        resultCell(t, label: "ממוצע", value: "\(s.avgScore)")
+                    if s.coherencePct > 0 || s.peakLevel > 0 {
+                        resultCell(t, label: "% בקוהרנטיות", value: "\(s.coherencePct)%")
                         divider(t)
-                        resultCell(t, label: "שיא", value: "\(s.peakScore)")
+                        resultCell(t, label: "שיא רמה", value: "\(s.peakLevel)/10")
                         divider(t)
                     }
                     resultCell(t, label: "משך", value: "\(Int(s.durationSec))s")

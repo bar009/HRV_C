@@ -28,7 +28,7 @@ final class CoherenceEngineTests: XCTestCase {
         let result = CoherenceEngine.analyze(samples(freqHz: 0.1, amp: 40, noise: 1))
         let r = try? XCTUnwrap(result)
         XCTAssertNotNil(r)
-        XCTAssertGreaterThan(r?.score ?? 0, 70, "a clean 0.1 Hz rhythm should read as high coherence")
+        XCTAssertGreaterThanOrEqual(r?.level ?? 0, 7, "a clean 0.1 Hz rhythm should read as high coherence")
         XCTAssertEqual(r?.band, .high)
         XCTAssertEqual(r?.peakHz ?? 0, 0.1, accuracy: 0.02, "peak should sit at the breathing rate")
     }
@@ -37,7 +37,7 @@ final class CoherenceEngineTests: XCTestCase {
         let result = CoherenceEngine.analyze(samples(freqHz: 0.1, amp: 0, noise: 40))
         let r = try? XCTUnwrap(result)
         XCTAssertNotNil(r)
-        XCTAssertLessThan(r?.score ?? 100, 40, "unstructured noise should read as low coherence")
+        XCTAssertLessThanOrEqual(r?.level ?? 10, 3, "unstructured noise should read as low coherence")
         XCTAssertEqual(r?.band, .low)
     }
 
@@ -51,12 +51,14 @@ final class CoherenceEngineTests: XCTestCase {
         XCTAssertNil(CoherenceEngine.analyze(few))
     }
 
-    func testScoreMappingIsMonotoneAndBounded() {
-        XCTAssertEqual(CoherenceEngine.scoreFrom(ratio: 0), 0)
-        XCTAssertLessThan(CoherenceEngine.scoreFrom(ratio: 0.5),
-                          CoherenceEngine.scoreFrom(ratio: 5))
-        XCTAssertLessThanOrEqual(CoherenceEngine.scoreFrom(ratio: 1_000), 100)
-        XCTAssertGreaterThanOrEqual(CoherenceEngine.scoreFrom(ratio: 1_000), 0)
+    func testLevelMappingIsMonotoneBoundedAndReachable() {
+        XCTAssertEqual(CoherenceEngine.level(forRatio: 0), 0)
+        XCTAssertLessThan(CoherenceEngine.level(forRatio: 0.5),
+                          CoherenceEngine.level(forRatio: 3))
+        // Unlike a 0-100 asymptote, 10 is a real, reachable target.
+        XCTAssertEqual(CoherenceEngine.level(forRatio: CoherenceEngine.excellentRatio), 10)
+        XCTAssertEqual(CoherenceEngine.level(forRatio: 1_000), 10)
+        XCTAssertGreaterThanOrEqual(CoherenceEngine.level(forRatio: 1_000), 0)
     }
 
     // MARK: FFT correctness (vs a naive DFT)

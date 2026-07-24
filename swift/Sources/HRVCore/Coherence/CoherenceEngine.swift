@@ -23,7 +23,7 @@ public struct IBISample: Sendable, Equatable {
 public struct CoherenceResult: Sendable, Equatable {
     public let ratio: Double        // PeakPower / (TotalPower - PeakPower)
     public let peakHz: Double        // frequency of the LF peak
-    public let score: Int            // 0-100 (our mapping)
+    public let level: Int            // 0-10 (our bounded, reachable mapping)
     public let band: CoherenceBand
 }
 
@@ -81,25 +81,30 @@ public enum CoherenceEngine {
 
         let denom = totalPower - peakBandPower
         let ratio = denom > 0 ? peakBandPower / denom : 0
-        let score = scoreFrom(ratio: ratio)
+        let level = level(forRatio: ratio)
         return CoherenceResult(ratio: ratio, peakHz: peakHz,
-                               score: score, band: band(forScore: score))
+                               level: level, band: band(forLevel: level))
     }
 
-    /// Our own monotone ratio -> 0-100 mapping. `ratio` is unbounded and
-    /// heavily skewed, so squash it; the constant sets where "high" lands.
-    /// (Calibrated against synthetic signals; real-data tuning is Q-B.)
-    public static func scoreFrom(ratio: Double) -> Int {
+    /// The Coherence Ratio at (and above) which we call the rhythm fully
+    /// coherent -- i.e. where the 0-10 level saturates at 10. Unlike a 0-100
+    /// score, 10 here is genuinely reachable. (Set against synthetic signals;
+    /// real-data tuning is Q-B.)
+    public static let excellentRatio: Double = 4.0
+
+    /// Our own ratio -> 0-10 level. Linear against `excellentRatio`, capped, so
+    /// the top of the scale is a real target rather than an asymptote.
+    public static func level(forRatio ratio: Double) -> Int {
         guard ratio > 0 else { return 0 }
-        let squashed = ratio / (ratio + 1.5)   // 0..1, ratio=1.5 -> 0.5
-        return Int((squashed * 100).rounded())
+        let scaled = (ratio / excellentRatio * 10).rounded()
+        return min(10, max(0, Int(scaled)))
     }
 
-    public static func band(forScore score: Int) -> CoherenceBand {
-        switch score {
-        case ..<40:  return .low
-        case 40..<70: return .medium
-        default:      return .high
+    public static func band(forLevel level: Int) -> CoherenceBand {
+        switch level {
+        case ...3:  return .low
+        case 4...6: return .medium
+        default:    return .high
         }
     }
 

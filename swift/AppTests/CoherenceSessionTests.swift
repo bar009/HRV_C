@@ -26,7 +26,7 @@ final class CoherenceSessionTests: XCTestCase {
 
     func testCoherentWindowScoresHighThroughEngine() {
         let result = CoherenceEngine.analyze(coherentSamples())
-        XCTAssertGreaterThan(result?.score ?? 0, 70)
+        XCTAssertGreaterThanOrEqual(result?.level ?? 0, 7)
         XCTAssertEqual(result?.band, .high)
     }
 
@@ -45,8 +45,8 @@ final class CoherenceSessionTests: XCTestCase {
     }
 
     func testBandThresholds() {
-        XCTAssertEqual(CoherenceEngine.band(forScore: 10), .low)
-        XCTAssertEqual(CoherenceEngine.band(forScore: 55), .medium)
-        XCTAssertEqual(CoherenceEngine.band(forScore: 85), .high)
+        XCTAssertEqual(CoherenceEngine.band(forLevel: 2), .low)
+        XCTAssertEqual(CoherenceEngine.band(forLevel: 5), .medium)
+        XCTAssertEqual(CoherenceEngine.band(forLevel: 9), .high)
     }
 }

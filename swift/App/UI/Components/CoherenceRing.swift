@@ -1,11 +1,11 @@
 import SwiftUI
 import HRVCore
 
-/// Live 0–100 coherence ring: a progress arc + the score in the centre, its
+/// Live 0–10 coherence ring: a progress arc + the level in the centre, its
 /// tint following the band. Colour is never the only signal — the number and
-/// the band label carry it too (AGENTS.md).
+/// the band label carry it too (AGENTS.md). 10 is a real, reachable top.
 struct CoherenceRing: View {
-    let score: Int
+    let level: Int      // 0-10
     let band: CoherenceBand
     @Environment(\.colorScheme) private var scheme
 
@@ -15,16 +15,21 @@ struct CoherenceRing: View {
             Circle()
                 .stroke(t.surfaceSecondary, lineWidth: 14)
             Circle()
-                .trim(from: 0, to: CGFloat(score) / 100)
+                .trim(from: 0, to: CGFloat(level) / 10)
                 .stroke(color(t), style: StrokeStyle(lineWidth: 14, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(HRVMotion.standard, value: score)
+                .animation(HRVMotion.standard, value: level)
             VStack(spacing: HRVLayout.space4) {
-                Text("\(score)")
-                    .font(.system(size: 56, weight: .semibold, design: .rounded))
-                    .foregroundStyle(t.textPrimary)
-                    .contentTransition(.numericText())
-                    .animation(HRVMotion.standard, value: score)
+                HStack(alignment: .lastTextBaseline, spacing: 2) {
+                    Text("\(level)")
+                        .font(.system(size: 56, weight: .semibold, design: .rounded))
+                        .foregroundStyle(t.textPrimary)
+                        .contentTransition(.numericText())
+                        .animation(HRVMotion.standard, value: level)
+                    Text("/10")
+                        .font(.hrvTitle3)
+                        .foregroundStyle(t.textTertiary)
+                }
                 Text(bandLabel)
                     .font(.hrvSubheadline)
                     .foregroundStyle(t.textSecondary)
@@ -32,7 +37,7 @@ struct CoherenceRing: View {
         }
         .frame(width: 200, height: 200)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("ציון קוהרנטיות \(score), \(bandLabel)")
+        .accessibilityLabel("רמת קוהרנטיות \(level) מתוך 10, \(bandLabel)")
     }
 
     private var bandLabel: String {
