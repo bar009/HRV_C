@@ -22,7 +22,14 @@ struct PracticeScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .animation(HRVMotion.gentle, value: session.phase)
         }
-        .background(t.surfaceBackground)
+        // A soft, calming wash instead of a flat surface — warmer than the
+        // data-forward tabs, to match the restful intent of breathing.
+        .background(nurtureBackground(t))
+        // Pin the stop control so it's always reachable mid-session, no matter
+        // how tall the live panel gets (it used to scroll off the bottom).
+        .safeAreaInset(edge: .bottom) {
+            if session.phase == .running { stopBar(t) }
+        }
         #if DEBUG
         // QA hook: `-coherenceAutostart` begins a session on appear (the start
         // button can't be tapped headlessly), for screenshotting the live state.
@@ -40,14 +47,14 @@ struct PracticeScreen: View {
     // MARK: idle -> intro + history
     private func intro(_ t: HRVTheme) -> some View {
         VStack(alignment: .leading, spacing: HRVLayout.space16) {
-            Text("תרגול נשימה")
+            Text("רגע לנשום")
                 .font(.hrvDisplay).foregroundStyle(t.textPrimary)
-            Text("סשן נשימה קצר ומודרך. נשמו יחד עם המעגל — פנימה כשהוא גדל, החוצה כשהוא מתכווץ. נשימה איטית וסדירה עוזרת להרגיע את הגוף.")
+            Text("קחו לעצמכם כמה דקות. נשמו יחד עם המעגל — פנימה כשהוא גדל, החוצה כשהוא מתכווץ. נשימה איטית ורכה מרגיעה את הגוף, ואפשר לעצור מתי שרוצים.")
                 .font(.hrvCallout).foregroundStyle(t.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             InformationCard(title: "איך זה עובד",
-                            message: "בחרו מקום נוח, נשמו לפי המעגל, ותנו לזה כמה דקות. אין \"נכון\" — זה תרגול, לא מבחן. עם Apple Watch מחובר, האפליקציה גם תמדוד קוהרנטיות (עד כמה קצב הלב מסודר) בזמן אמת.")
-            PrimaryButton(title: "להתחיל תרגול") { session.start() }
+                            message: "התרווחו במקום נוח, נשמו לפי המעגל, ותנו לזה לקרות. אין \"נכון\" ואין מה להשיג — רק רגע של שקט לעצמכם. עם Apple Watch מחובר, נראה גם עד כמה קצב הלב נרגע תוך כדי.")
+            PrimaryButton(title: "מתחילים") { session.start() }
             if !session.history.isEmpty { historySection(t) }
         }
     }
@@ -87,11 +94,31 @@ struct PracticeScreen: View {
 
     // MARK: running -> pacer + live data + level
     private func active(_ t: HRVTheme) -> some View {
-        VStack(spacing: HRVLayout.space24) {
-            Text(Self.clock(session.elapsed))
-                .font(.hrvTitle3).foregroundStyle(t.textSecondary)
-                .contentTransition(.numericText())
+        VStack(spacing: HRVLayout.space20) {
+            // Always-visible exit at the top of the session — a gentle "you can
+            // stop whenever" affordance (the pinned bar below also finishes).
+            HStack {
+                Button { session.finish() } label: {
+                    Image(systemName: "xmark")
+                        .font(.hrvHeadline).foregroundStyle(t.textSecondary)
+                        .frame(width: 40, height: 40)
+                        .background(t.surfacePrimary, in: Circle())
+                }
+                .accessibilityLabel("סיום תרגול")
+                Spacer()
+                Text(Self.clock(session.elapsed))
+                    .font(.hrvTitle3).foregroundStyle(t.textSecondary)
+                    .contentTransition(.numericText())
+                Spacer()
+                Color.clear.frame(width: 40, height: 40)   // balances the ✕
+            }
+
             BreathingRing(period: session.breathingPace / 2)
+
+            Text("נשמו ברוגע. אין לאן למהר.")
+                .font(.hrvCallout).foregroundStyle(t.textSecondary)
+                .multilineTextAlignment(.center)
+
             // The coherence level appears once the first reading is in; the live
             // data panel shows from the first beat, so the ~30s warm-up doesn't
             // look like "just a moving ring". With no beats at all (iPhone, no
@@ -114,18 +141,33 @@ struct PracticeScreen: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, HRVLayout.space24)
             }
-            PrimaryButton(title: "סיום") { session.finish() }
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, HRVLayout.space16)
         .animation(HRVMotion.gentle, value: session.hasCoherence)
         .animation(HRVMotion.gentle, value: session.isReceivingBeats)
+    }
+
+    // Pinned bottom control so finishing never requires scrolling.
+    private func stopBar(_ t: HRVTheme) -> some View {
+        VStack(spacing: 0) {
+            Rectangle().fill(t.borderSubtle).frame(height: HRVLayout.hairlineWidth)
+            PrimaryButton(title: "סיום תרגול") { session.finish() }
+                .padding(.horizontal, HRVLayout.space20)
+                .padding(.vertical, HRVLayout.space12)
+        }
+        .background(t.surfaceElevated)
+    }
+
+    private func nurtureBackground(_ t: HRVTheme) -> some View {
+        LinearGradient(colors: [t.accentSoft.opacity(0.45), t.surfaceBackground],
+                       startPoint: .top, endPoint: .bottom)
+            .ignoresSafeArea()
     }
 
     // MARK: finished -> results
     private func results(_ t: HRVTheme) -> some View {
         VStack(alignment: .leading, spacing: HRVLayout.space16) {
-            Text("סיכום הסשן")
+            Text("כל הכבוד שלקחת רגע")
                 .font(.hrvDisplay).foregroundStyle(t.textPrimary)
             if let s = session.lastSaved {
                 HStack(spacing: 0) {
@@ -142,7 +184,7 @@ struct PracticeScreen: View {
                 .padding(.vertical, HRVLayout.space16)
                 .background(t.surfacePrimary, in: RoundedRectangle(cornerRadius: HRVLayout.radius16, style: .continuous))
             }
-            Text("נשמר בהיסטוריה. אפשר לחזור לתרגל בכל עת.")
+            Text("נשמר בהיסטוריה. חזרו לכאן מתי שבא לכם לנשום.")
                 .font(.hrvSubheadline).foregroundStyle(t.textTertiary)
             PrimaryButton(title: "סיום") { session.reset() }
         }
