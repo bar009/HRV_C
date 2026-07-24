@@ -50,9 +50,9 @@ struct CoherenceRing: View {
 
     private func color(_ t: HRVTheme) -> Color {
         switch band {
-        case .low:    t.statusUnavailable
-        case .medium: t.statusLearning
-        case .high:   t.statusStable
+        case .low:    t.statusCritical   // red
+        case .medium: t.statusLearning   // blue
+        case .high:   t.statusStable     // green
         }
     }
 }
