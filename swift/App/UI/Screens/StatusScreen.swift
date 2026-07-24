@@ -8,6 +8,7 @@ struct StatusScreen: View {
     @Environment(MonitoringCoordinator.self) private var coordinator
     @Environment(\.colorScheme) private var scheme
     @State private var showGuided = false
+    @State private var showLogCalm = false
 
     var body: some View {
         let t = HRVTheme.resolve(scheme)
@@ -22,6 +23,7 @@ struct StatusScreen: View {
         .sheet(isPresented: $showGuided) {
             GuidedMomentView(alertID: pendingAlertID ?? currentAlertID)
         }
+        .sheet(isPresented: $showLogCalm) { LogCalmMomentView() }
         // P3: notification tap -> open the Guided Moment for that alert.
         // onAppear covers the cold-launch-from-notification case, where the
         // pending id is set before this view exists.
@@ -41,6 +43,14 @@ struct StatusScreen: View {
     private var currentAlertID: UUID? {
         if case let .attention(id, _) = coordinator.presentation { return id }
         return nil
+    }
+
+    /// The calm pole (map both poles). Shown on Today once the user is past
+    /// setup/learning, below the day's events.
+    @ViewBuilder private var calmPole: some View {
+        if FeatureFlags.calmPoleEnabled {
+            CalmPoleSection(moments: coordinator.calmMoments) { showLogCalm = true }
+        }
     }
 
     /// Newest sample's raw SDNN in ms -- the concrete number behind the state.
@@ -98,6 +108,7 @@ struct StatusScreen: View {
             }
             // Charting lives in the Trends tab; Today answers "right now".
             TodayEventsSection(events: coordinator.todayEvents)
+            calmPole
         }
     }
 
@@ -116,6 +127,7 @@ struct StatusScreen: View {
                 .font(.hrvCallout).foregroundStyle(t.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             TodayEventsSection(events: coordinator.todayEvents)
+            calmPole
         }
     }
 
@@ -132,6 +144,7 @@ struct StatusScreen: View {
             }
             // A stale reading doesn't mean nothing happened today.
             TodayEventsSection(events: coordinator.todayEvents)
+            calmPole
         }
     }
 }

@@ -21,6 +21,11 @@ enum FeatureFlags {
     /// `coherenceEnabled` still gates the coherence *trend* in the Trends tab.
     static var breathingEnabled: Bool { true }
 
+    /// The calm pole (strategy memo, "map both poles"): user-logged calm
+    /// moments on Today. Purely journaled wellness — no sensor, no health data,
+    /// no permissions — so it's safe to ship on. Flagged for a clean off-switch.
+    static var calmPoleEnabled: Bool { true }
+
     /// Beat-series metrics (RMSSD/pNN50/SDSD from HKHeartbeatSeriesSample).
     /// ENABLED for TestFlight: it works on iPhone alone (no watch app needed)
     /// and doubles as the Q-A field test -- the "מדדים מפורטים" card appears

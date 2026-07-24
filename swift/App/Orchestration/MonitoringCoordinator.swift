@@ -63,6 +63,9 @@ final class MonitoringCoordinator {
     private(set) var baseline: Baseline?
     private(set) var recentSamples: [ProcessedHRVSample] = []
     private(set) var events: [EventRecord] = []
+    /// The calm pole (strategy memo, "map both poles"): user-logged moments of
+    /// calm, newest-first. Purely journaled — no sensor, no health data.
+    private(set) var calmMoments: [CalmMomentSummary] = []
     private(set) var isHealthAuthorized = false
     /// Set when the user taps an alert notification (UI_WIRING P3); RootView
     /// switches to Today and StatusScreen opens the Guided Moment, then clears it.
@@ -327,6 +330,7 @@ final class MonitoringCoordinator {
         try? context.delete(model: EventRecord.self)
         try? context.delete(model: GuidedResponse.self)
         try? context.delete(model: CoherenceSession.self)
+        try? context.delete(model: CalmMoment.self)
         try? context.save()
         #endif
         // Fresh detection state: drop the in-memory baseline window + detector state.
@@ -370,6 +374,17 @@ final class MonitoringCoordinator {
                              at: Date().addingTimeInterval(-Double(d) * 86_400))
             }
         }
+        #if canImport(SwiftData)
+        // Seed the calm pole so the demo shows both poles mapped.
+        if calmMoments.isEmpty {
+            context.insert(CalmMoment(createdAt: Date().addingTimeInterval(-3 * 3600),
+                                      place: "בית", people: "משפחה", note: "קפה של בוקר בשקט"))
+            context.insert(CalmMoment(createdAt: Date().addingTimeInterval(-2 * 86_400),
+                                      place: "בחוץ", people: "לבד", note: "הליכה בפארק"))
+            try? context.save()
+            reloadCalmMoments()
+        }
+        #endif
         ingest(batch.samples, classifier: batch.classifier)
     }
 
@@ -436,9 +451,37 @@ final class MonitoringCoordinator {
         #if canImport(SwiftData)
         let d = FetchDescriptor<EventRecord>(sortBy: [SortDescriptor(\.firedAt, order: .reverse)])
         events = (try? context.fetch(d)) ?? []
+        reloadCalmMoments()
         #endif
         let from = Date().addingTimeInterval(-Double(engine.windowDays) * 86_400)
         recentSamples = repository.samples(from: from, to: Date())
+    }
+
+    // MARK: calm pole (map both poles)
+
+    /// Log a calm moment. `place`/`people`/`note` may be empty — the timestamp
+    /// alone already maps "when".
+    func saveCalmMoment(place: String = "", people: String = "", note: String = "") {
+        #if canImport(SwiftData)
+        context.insert(CalmMoment(place: place, people: people, note: note))
+        try? context.save()
+        reloadCalmMoments()
+        #endif
+    }
+
+    func deleteCalmMoment(_ id: UUID) {
+        #if canImport(SwiftData)
+        let d = FetchDescriptor<CalmMoment>(predicate: #Predicate { $0.id == id })
+        if let m = try? context.fetch(d).first { context.delete(m); try? context.save() }
+        reloadCalmMoments()
+        #endif
+    }
+
+    private func reloadCalmMoments() {
+        #if canImport(SwiftData)
+        let d = FetchDescriptor<CalmMoment>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        calmMoments = ((try? context.fetch(d)) ?? []).map(CalmMomentSummary.init)
+        #endif
     }
 
     /// Rehydrate the rolling baseline and alert cooldown without replaying

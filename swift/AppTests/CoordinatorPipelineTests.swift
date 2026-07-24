@@ -142,6 +142,32 @@ final class CoordinatorPipelineTests: XCTestCase {
         }
     }
 
+    // MARK: Calm pole (map both poles)
+
+    func testCalmMomentSaveReloadAndDelete() throws {
+        XCTAssertTrue(coordinator.calmMoments.isEmpty)
+        coordinator.saveCalmMoment(place: "בית", people: "משפחה", note: "קפה בשקט")
+        XCTAssertEqual(coordinator.calmMoments.count, 1)
+        let m = try XCTUnwrap(coordinator.calmMoments.first)
+        XCTAssertEqual(m.place, "בית")
+        XCTAssertEqual(m.people, "משפחה")
+
+        // A fresh coordinator over the same store must see it (persisted).
+        let reopened = MonitoringCoordinator(repository: SwiftDataRepository(context: ModelContext(container)),
+                                             context: ModelContext(container))
+        XCTAssertEqual(reopened.calmMoments.count, 1)
+
+        coordinator.deleteCalmMoment(m.id)
+        XCTAssertTrue(coordinator.calmMoments.isEmpty)
+    }
+
+    func testDeleteAllDataClearsCalmMoments() {
+        coordinator.saveCalmMoment(note: "רגע טוב")
+        XCTAssertFalse(coordinator.calmMoments.isEmpty)
+        coordinator.deleteAllData()
+        XCTAssertTrue(coordinator.calmMoments.isEmpty)
+    }
+
     // MARK: Relevance feedback
 
     func testRelevanceRoundTripAndUpdateWithoutDuplication() throws {
