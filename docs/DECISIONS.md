@@ -11,7 +11,8 @@
 | D2 | מודל ניטור | פסיבי לאורך היום (v1) | Spec §0.2 |
 | D3 | פלטפורמה | iOS + watchOS משלנו | Spec §0.2 |
 | D4 | אחסון | מקומי בלבד, ללא ענן | Spec §0.2 |
-| **D-COH** | מצב מדידה אקטיבי (Coherence)? | **פסיבי-קודם** — Coherence נדחה למודול נפרד עתידי (`hrv_core/coherence/`) | Spec §0.4 |
+| **D-COH** | מצב מדידה אקטיבי (Coherence)? | **נכלל ביעד V1 מאחורי feature flags** — Polar H10 הוא מקור RR ראשי; Apple Watch מציג דופק ומדד קצב משוער בלבד ללא RR אמיתי | `PRODUCT_REQUIREMENTS_HE.md` §21 |
+| **D-PRACTICE** | מודל התרגול | מנוע אישי שקוף: 50 טכניקות בשלוש רמות גישה, פרוטוקולים נפרדים, משוב עצמי קודם לפיזיולוגיה | `PRODUCT_REQUIREMENTS_HE.md` §21 |
 | D-OP4 | מקור HRV | Hybrid: SDNN של אפל ראשי, RMSSD מ-RR משני/אופורטוניסטי | Deep Dive A.2 |
 | OP-5 | שיטת סף | robust z-score על `ln(RMSSD)` עם median + MAD | Deep Dive B.3 |
 | Q-C | גרסת iOS מינימלית | **iOS 17 / watchOS 10** → מנוע אחסון **SwiftData** | Deep Dive C.5 |
@@ -44,7 +45,7 @@
 | Detection | `AnomalyDetector` (robust-z + מכונת מצבים + cooldown + context) | ✅ מומש + נבדק |
 | Persistence | `InMemoryHRVRepository` (סכמה לוגית C.6) | ✅ מומש |
 | Sim | מחולל סינתטי + `run_scenario` | ✅ מומש |
-| Coherence | מצב אקטיבי / תחום-תדר (D-COH) | ⏸️ נדחה (מכוון) |
+| Coherence | מצב אקטיבי / תחום-תדר (D-COH) | 🟡 ליבה חישובית קיימת; Polar/Watch דורשים אימות מכשיר |
 
 ## סטטוס פורט ה-Swift (`swift/`)
 

@@ -52,23 +52,18 @@ final class SimulatedHeartRateSource: HeartRateSource {
     }
 }
 
-/// Real source: beats arrive from the watch's workout session over
-/// WatchConnectivity (see WatchApp/WorkoutCoherenceController). The watch tells
-/// the phone to start/stop the session out of band; here we just relay beats.
-/// DEVICE-DEFERRED validation -- the watch half needs real hardware.
+/// Watch workout samples are BPM, not RR. Keep them on a separate interface so
+/// they cannot accidentally feed the true-RR coherence engine.
 #if canImport(WatchConnectivity)
-final class WatchWorkoutHeartRateSource: HeartRateSource {
-    var onBeat: ((IBISample) -> Void)?
+final class WatchEstimatedRhythmSource {
+    var onHeartRate: ((TimeInterval, Double) -> Void)?
     private let sync: PhoneWatchSync
 
     init(sync: PhoneWatchSync) {
         self.sync = sync
-        sync.onCoherenceBeat = { [weak self] t, ibiMs in
-            self?.onBeat?(IBISample(t: t, ibiMs: ibiMs))
+        sync.onPracticeHeartRate = { [weak self] t, bpm in
+            self?.onHeartRate?(t, bpm)
         }
     }
-
-    func start() {}   // the watch app owns starting/stopping the workout session
-    func stop() {}
 }
 #endif

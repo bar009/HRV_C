@@ -226,6 +226,8 @@ final class MonitoringCoordinator {
         try? context.delete(model: EventRecord.self)
         try? context.delete(model: GuidedResponse.self)
         try? context.delete(model: CoherenceSession.self)
+        try? context.delete(model: PracticeSessionRecord.self)
+        try? context.delete(model: PracticePreferenceRecord.self)
         try? context.save()
         #endif
         // Fresh detection state: drop the in-memory baseline window + detector state.

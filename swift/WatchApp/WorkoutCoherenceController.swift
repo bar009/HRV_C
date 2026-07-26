@@ -58,13 +58,12 @@ final class WorkoutCoherenceController: NSObject, ObservableObject {
         isRunning = false
     }
 
-    /// Convert an instantaneous HR sample to an approximate IBI and stream it to
-    /// the phone. WCSession.sendMessage is the low-latency path for a live loop.
-    private func sendBeat(bpm: Double) {
+    /// Stream the measured BPM as BPM. A workout sample is not a measured RR
+    /// interval and must never be converted into one or labeled coherence.
+    private func sendHeartRate(bpm: Double) {
         guard bpm > 0, WCSession.default.isReachable else { return }
-        let ibiMs = 60_000.0 / bpm
         let t = Date().timeIntervalSince(startDate)
-        WCSession.default.sendMessage(["coherenceBeat": ["t": t, "ibiMs": ibiMs]],
+        WCSession.default.sendMessage(["practiceHeartRate": ["t": t, "bpm": bpm]],
                                       replyHandler: nil, errorHandler: nil)
     }
 }
@@ -87,7 +86,7 @@ extension WorkoutCoherenceController: HKLiveWorkoutBuilderDelegate {
               let stats = workoutBuilder.statistics(for: hrType),
               let bpm = stats.mostRecentQuantity()?
                 .doubleValue(for: HKUnit.count().unitDivided(by: .minute())) else { return }
-        sendBeat(bpm: bpm)
+        sendHeartRate(bpm: bpm)
     }
 }
 #endif
