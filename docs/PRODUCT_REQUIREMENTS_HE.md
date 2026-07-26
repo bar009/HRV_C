@@ -1,0 +1,653 @@
+# TRIGGER BITTER
+
+## מסמך דרישות מלא להשקה כאפליקציית Wellness
+
+Polar H10 • Bluetooth • HRV • פרטיות • App Store • אבטחה • שיווק • בדיקות
+
+> **מטרת המסמך**: להגדיר את גרסת V1 כך שתוכל לעלות ל-App Store כמוצר עצמאי למודעות עצמית, ללא ייעוד רפואי, עם Polar H10 כחיישן נתמך, עיבוד מקומי והפחתת סיכוני רגולציה, פרטיות ודחייה בבדיקת Apple.
+
+## מטא-דאטה
+
+- **גרסה:** 1.0
+- **תאריך בדיקה:** 27 ביולי 2026
+- **סטטוס:** מסמך עבודה מחייב ל-V1
+
+הערה: זהו מסמך תכנון ותאימות מעשי, לא חוות דעת משפטית. שינוי מהותי במוצר דורש בדיקה מחדש לפי פרק 18.
+
+בקרת מסמך והנחות עבודה
+
+| נושא | החלטת V1 |
+| --- | --- |
+| סוג מוצר | Wellness / מודעות עצמית; לא מכשיר רפואי |
+| חיישן | Polar H10 וחיישני BLE תואמים לשירות Heart Rate |
+| מקור נתונים חי | RR ודופק ישירות ב-Bluetooth; HealthKit אופציונלי בלבד |
+| עיבוד | על המכשיר בלבד |
+| אחסון | מקומי ומוצפן; ללא שרת וללא חשבון |
+| שיווק | זיהוי שינוי פיזיולוגי אישי; ללא אבחון או טיפול |
+| מיקרופון | לא ב-V1; בעתיד רק הקלטה ידנית, גלויה ובהסכמה |
+| אנליטיקה | ללא SDK אנליטיקה/פרסום צד שלישי ב-V1 |
+| קהל יעד | מבוגרים; לא מיועד לילדים ולא לשימוש חירום |
+| קטגוריית App Store | Health & Fitness, לא Medical |
+
+> **החלטת על**: הדרך הקצרה והנקייה ביותר להשקה היא: H10 → Bluetooth → RR/דופק → baseline אישי → “מועמד לשינוי פיזיולוגי” → שאלון קצר → אחסון מקומי. אין צורך ב-CE, FDA או אמ״ר כל עוד הייעוד, הממשק והשיווק נשארים לא-רפואיים.
+
+## תוכן עניינים
+
+- 1. תקציר מנהלים והחלטות מחייבות
+- 2. הגדרת המוצר והייעוד המותר
+- 3. גבול רגולטורי: Wellness מול מכשיר רפואי
+- 4. Polar H10: שימוש, רישוי, סימני מסחר ופטנטים
+- 5. ארכיטקטורת V1 וזרימת הנתונים
+- 6. פרטיות והגנת מידע
+- 7. אבטחת מידע והקשחת המוצר
+- 8. הרשאות iOS ו-HealthKit
+- 9. Bluetooth, רקע ואמינות ניטור
+- 10. מיקרופון והקלטת סביבה
+- 11. אלגוריתם, דיוק וולידציה
+- 12. חוויית משתמש ובטיחות
+- 13. שיווק, App Store וטענות מוצר
+- 14. מסמכים משפטיים ותפעוליים
+- 15. הכנה ל-App Review
+- 16. בדיקות וקריטריוני שחרור
+- 17. תפעול לאחר השקה
+- 18. שינויים שמחייבים בדיקה מחדש
+- 19. נוסחים מוכנים
+- 20. Checklist סופי
+- 21. מקורות רשמיים
+## 1. תקציר מנהלים והחלטות מחייבות
+
+> **שורה תחתונה**: אפשר להשיק את Trigger Bitter בלי אישור רפואי ובלי להודיע ל-Polar, בתנאי שהאפליקציה מוצגת ככלי למודעות עצמית, אינה מאבחנת מצב רפואי או נפשי, אינה מסתירה הקלטה או איסוף נתונים, ואינה יוצרת מצג של שותפות עם Polar.
+
+### חובה ב-V1
+
+- [ ] להציג את התוצאה כ-“שינוי פיזיולוגי” או “Trigger candidate”, ולא כהתקף חרדה, PTSD, טראומה, הפרעת קצב או אבחנה.
+- [ ] להשאיר את הנתונים על המכשיר בלבד; ללא חשבון, שרת, ענן או סנכרון חיצוני.
+- [ ] לספק Privacy Policy נגישה גם ב-App Store וגם מתוך האפליקציה.
+- [ ] לבקש הרשאות רק בזמן שהפיצ'ר נדרש, עם הסבר ברור וספציפי.
+- [ ] להציג שהניטור פעיל ולתת כפתור Start/Stop ברור.
+- [ ] לא לכלול הקלטת מיקרופון אוטומטית ב-V1.
+- [ ] לספק מצב Demo מלא ל-App Review, משום שהבודק כנראה לא יחזיק Polar H10.
+- [ ] לשמור Third-Party Notices אם נעשה שימוש ב-Polar BLE SDK או בספריות אחרות.
+- [ ] לבדוק ולמלא במדויק App Privacy, Privacy Manifest, age rating והצהרת הצפנה.
+### אסור ב-V1
+
+- טענה שהאפליקציה מאבחנת, מונעת, מטפלת או מתריעה על סכנה רפואית.
+- המילים “Official Polar”, “Approved by Polar”, “by Polar” או שימוש בלוגו Polar כחלק מהמותג.
+- שימוש בנתוני בריאות לפרסום ממוקד, פרופיילינג שיווקי או מכירה לצד שלישי.
+- שמירת HRV, RR, ECG, שאלוני טריגר או אודיו בתוך לוגים, crash reports או analytics.
+- התחלת הקלטת אודיו ללא פעולה מפורשת, חיווי ברור ואפשרות לעצור ולמחוק.
+- הבטחת ניטור רציף בכל מצב של iOS, במיוחד לאחר Force Quit, כיבוי Bluetooth או הרשאה שנשללה.
+## 2. הגדרת המוצר והייעוד המותר
+
+### 2.1 Intended Purpose מחייב
+
+> **נוסח הייעוד**: Trigger Bitter היא אפליקציה למודעות עצמית המנתחת דופק ומרווחי RR מחיישן לב תואם, בונה טווח אישי ומסמנת רגעים שבהם מזוהה שינוי פיזיולוגי ביחס לדפוס האישי. לאחר הסימון המשתמש יכול לתעד את ההקשר, התחושה והאירוע כדי לזהות דפוסים אישיים לאורך זמן.
+
+### 2.2 מה המוצר כן עושה
+
+- קורא דופק ומרווחי RR מחיישן Bluetooth תואם.
+- מחשב מדדי HRV וסטייה מה-baseline האישי.
+- משקלל איכות אות, תנועה, זמן, הקשר והיסטוריה אישית.
+- מסמן “מועמד לשינוי פיזיולוגי” ולא קובע עובדה קלינית.
+- מבקש מהמשתמש לאשר, לדחות או לתאר את האירוע.
+- מציג מגמות אישיות ולא נורמות רפואיות.
+### 2.3 מה המוצר לא עושה
+
+- אינו מאבחן חרדה, התקף חרדה, PTSD, טראומה, דיכאון או מצב נפשי אחר.
+- אינו מאבחן הפרעות קצב, מחלות לב או מצב רפואי.
+- אינו מחליף רופא, פסיכולוג, מטפל או שירותי חירום.
+- אינו נותן המלצת טיפול, תרופה או שינוי רפואי.
+- אינו מבטיח לזהות כל אירוע ואינו מבטיח שלא יהיו התראות שווא.
+### 2.4 מילון מוצר מחייב
+
+| מותר | לא להשתמש |
+| --- | --- |
+| שינוי פיזיולוגי | התקף חרדה זוהה |
+| מועמד לטריגר / Trigger candidate | טריגר ודאי |
+| יציאה מהטווח האישי | חריגה רפואית |
+| דפוס אישי | אבחנה |
+| איכות אות נמוכה | לב לא תקין |
+| לא זוהה שינוי משמעותי | הכול תקין רפואית |
+| כלי למודעות עצמית | מכשיר ניטור רפואי |
+
+## 3. גבול רגולטורי: Wellness מול מכשיר רפואי
+
+הסיווג נקבע בעיקר לפי הייעוד המוצהר והמשתמע: הטקסט ב-App Store, האתר, פרסומות, שמות הכפתורים, התראות, התוצאות ומה שהמשתמש מתבקש לעשות. Disclaimer לבדו אינו מבטל טענה רפואית שמופיעה בשאר המוצר. [R1][R2]
+
+### 3.1 אזור ירוק - נשאר Wellness
+
+- מודעות עצמית, journaling ומעקב אחר דפוסים אישיים.
+- מדדים פיזיולוגיים לא-אבחוניים והשוואה ל-baseline אישי.
+- התראה כללית שמבקשת מהמשתמש לבדוק מה הוא מרגיש.
+- המלצה כללית לנשום, לעצור, לכתוב או לשים לב לגוף, ללא טיפול במחלה.
+### 3.2 אזור אדום - עלול להפוך למכשיר רפואי
+
+- “מזהה התקפי חרדה” או “מזהה PTSD”.
+- “מונע התקף”, “מתריע לפני אירוע מסוכן” או “מנטר מצב רפואי”.
+- המלצה לפעולה רפואית על בסיס הפלט.
+- Dashboard לרופא שמיועד לקבלת החלטה אבחונית או טיפולית.
+- שימוש באוכלוסיית חולים עם טענה קלינית מוגדרת.
+### 3.3 עמדת שווקים מרכזיים
+
+| שוק | עמדת V1 | מה יפעיל בדיקה מחודשת |
+| --- | --- | --- |
+| ישראל | לא להציג כמכשור רפואי; פרטיות עדיין חלה לפי אופן עיבוד המידע. | טענה רפואית, מאגר שרת, שימוש קליני או מכירה למוסדות. |
+| האיחוד האירופי | תוכנת lifestyle / well-being ללא מטרה רפואית יכולה להישאר מחוץ ל-MDR. | מטרת אבחון/טיפול/ניטור רפואי; Rule 11 עשוי לחול. |
+| ארה״ב | General wellness בסיכון נמוך יכול להיכנס למדיניות אכיפה מקלה של FDA. | טענת מחלה, החלטה קלינית או סיכון משמעותי מכשל. |
+
+> **בקרת שינוי**: כל שינוי בשם הפיצ'ר, הטקסט בפרסום או משמעות ההתראה חייב לעבור Claim Review קצר מול פרק זה. אלגוריתם זהה יכול להיות Wellness או Medical Device רק בגלל ניסוח וייעוד שונים.
+
+## 4. Polar H10: שימוש, רישוי, סימני מסחר ופטנטים
+
+### 4.1 מה מותר
+
+- להשיק אפליקציה מסחרית שמתחברת ל-H10 של המשתמש ללא הודעה מוקדמת ל-Polar.
+- לקרוא HR ו-RR דרך Bluetooth Heart Rate Service הסטנדרטי ללא Polar SDK.
+- להשתמש ב-Polar BLE SDK לפיתוח מסחרי בהתאם לרישיון, כולל שמירת הודעות copyright ורישיון. [P1]
+- לציין תאימות באופן תיאורי: “Compatible with Polar H10”.
+- לתמוך גם ב-Garmin, Wahoo וחיישני BLE אחרים כדי שהמוצר לא יהיה תלוי במותג אחד.
+### 4.2 מה לא לעשות
+
+- לא להשתמש בלוגו Polar או בשם Polar כחלק משם האפליקציה או האייקון.
+- לא להציג שותפות, חסות, אישור או אינטגרציה רשמית ללא הסכם כתוב.
+- לא להעתיק תמונות מוצר מאתר Polar ללא רישיון; השתמש בצילום שלך או בנכס מורשה.
+- לא להעתיק firmware, עיצוב חומרה או אלגוריתם קנייני.
+- לא למכור H10 תחת המותג שלך כאילו הוא White Label.
+### 4.3 ניסוח שיווקי מומלץ
+
+> **נוסח**: Trigger Bitter supports compatible Bluetooth heart-rate sensors, including Polar H10. Polar and Polar H10 are trademarks of Polar Electro Oy. Trigger Bitter is an independent application and is not affiliated with, endorsed by, or sponsored by Polar Electro Oy.
+
+הערה: פטנטים של Polar על רכיבים מסוימים אינם מונעים חיבור למוצר שנרכש כדין באמצעות הממשקים הנתמכים. הם כן רלוונטיים אם מנסים לשכפל חומרה, firmware או שיטות מוגנות.
+
+## 5. ארכיטקטורת V1 וזרימת הנתונים
+
+### 5.1 זרימת הנתונים המחייבת
+
+> **Pipeline**: Polar H10 / חיישן BLE → Heart Rate Service → HR + RR parser → IBI samples → בדיקת איכות ותנועה → baseline אישי → שינוי פיזיולוגי → התראה מקומית → שאלון → אחסון מקומי.
+
+### 5.2 החלטות טכניות
+
+- V1 משתמש ב-CoreBluetooth ובשירות 0x180D, מאפיין 0x2A37. [B1]
+- יש לקרוא את כל ערכי ה-RR שבחבילה; חבילה אחת יכולה להכיל יותר ממרווח אחד.
+- ערך RR שמגיע מהחיישן עובר ישירות ל-IBI pipeline; אין להעביר אותו ל-RRExtractor.
+- RRExtractor משמש רק במסלול עתידי שבו מתקבל ECG גולמי ויש לזהות R-peaks.
+- יש לשמור בנפרד beatTime, receivedTime ו-triggerDetectedTime.
+- יש לתעד sensor model, firmware, app version ו-algorithm version בכל session.
+- HealthKit אינו מקור ברירת המחדל לזרם החי של H10; הוא אופציונלי לייבוא/ייצוא נתוני בריאות.
+### 5.3 מסלול מתקדם עתידי
+
+כאשר נדרש ECG גולמי, ניתוח איכות אות או תאוצה, ניתן להוסיף Polar BLE SDK. ה-H10 מספק דרך ה-SDK ECG בקצב 130Hz ותאוצה עד 200Hz. [P2]
+
+| Provider | שימוש | סטטוס |
+| --- | --- | --- |
+| GenericBLEHRProvider | HR + RR דרך Bluetooth תקני | חובה ב-V1 |
+| PolarRawECGProvider | ECG ותאוצה דרך Polar SDK | לאחר ולידציה |
+| HealthKitProvider | היסטוריה/Apple Watch/סנכרון שהמשתמש בחר | אופציונלי |
+| DemoProvider | זרם מוקלט לבדיקת App Review ו-QA | חובה ב-V1 |
+
+## 6. פרטיות והגנת מידע
+
+> **עיקרון**: HR, RR, HRV, ECG, תיאורי רגשות והקשר הם מידע רגיש. העובדה שהאפליקציה אינה רפואית רגולטורית אינה הופכת את הנתונים ללא-רגישים.
+
+### 6.1 מודל פרטיות V1
+
+- [ ] אין חשבון משתמש.
+- [ ] אין backend או API.
+- [ ] אין העלאת נתוני בריאות, טקסט חופשי או מזהה חיישן לשרת.
+- [ ] אין Firebase Analytics, Meta SDK, advertising SDK או session replay.
+- [ ] כל העיבוד וההתראות מתבצעים על המכשיר.
+- [ ] מחיקה מלאה זמינה מתוך Settings בתוך האפליקציה.
+### 6.2 מלאי נתונים
+
+| נתון | מטרה | אחסון מומלץ | שיתוף |
+| --- | --- | --- | --- |
+| HR / RR | חישוב שינוי ו-HRV | מקומי; raw מוגבל בזמן | לא |
+| HRV / baseline | השוואה אישית | מקומי | לא |
+| Trigger candidate | אירוע למשתמש | מקומי | לא |
+| תשובות שאלון / טקסט | הקשר ודפוסים | מקומי ומוצפן | רק בייצוא יזום |
+| מזהה חיישן | חיבור מחדש | מקומי; לא לשימוש מעקב | לא |
+| לוג טכני | פתרון תקלות | ללא נתוני בריאות | רק בהסכמה |
+| אודיו | לא קיים ב-V1 | — | — |
+
+### 6.3 שמירה ומחיקה
+
+- Raw RR/ECG: מומלץ למחוק אוטומטית לאחר תקופה קצרה שנקבעת במוצר; לשמור רק אם יש צורך אמיתי.
+- סיכומי אירועים ו-baseline: נשמרים מקומית עד מחיקה של המשתמש.
+- כפתור “מחיקת כל הנתונים” צריך למחוק sessions, baseline, notes, exports זמניים ו-cache.
+- ייצוא CSV/JSON נעשה רק בעקבות פעולה מפורשת, עם אזהרה שהקובץ מכיל מידע רגיש.
+- לא לכלול מידע רגיש בקובצי backup אם אינו נחוץ; לבחון exclusion מגיבוי למידע raw.
+### 6.4 Privacy Policy חייבת לכלול
+
+- איזה מידע מעובד ואיזה מידע אינו נאסף על ידי המפתח.
+- מטרת העיבוד ותיאור שהנתונים נשארים במכשיר.
+- הרשאות Bluetooth, HealthKit, notifications ומיקרופון אם יתווסף.
+- מדיניות שמירה ומחיקה.
+- אופן ייצוא ושיתוף ביוזמת המשתמש.
+- רשימת ספקים/SDKs, גם אם הרשימה היא “אין ספקים שמקבלים נתוני בריאות”.
+- כתובת קשר לבקשות פרטיות ותמיכה.
+- הודעה שהאפליקציה אינה מיועדת לשעת חירום.
+### 6.5 ישראל, אירופה וענן עתידי
+
+בישראל, מידע על מצב בריאות נחשב מידע בעל רגישות מיוחדת לפי מסגרת הגנת הפרטיות המעודכנת. אם בעתיד המפתח יחזיק מאגר שרת, יחולו חובות נוספות בנוגע לבסיס איסוף, יידוע, אבטחת מידע, ספקים, זכויות משתמש וחובות רישום/הודעה לפי היקף וסוג המאגר. [D1][D2]
+
+אם האפליקציה תציע חשבון או ענן למשתמשים באיחוד האירופי, יש לבחון GDPR: בסיס חוקי לפי Article 6, תנאי נפרד לעיבוד נתוני בריאות לפי Article 9, data minimisation, זכויות משתמש ו-DPIA כאשר העיבוד צפוי ליצור סיכון גבוה. [D3]
+
+> **כלל מעבר לענן**: לא מוסיפים backend אפילו “רק לניסיון” לפני הכנת Data Map, Privacy Policy מעודכנת, תנאי ספקים, אבטחה, מנגנון מחיקה וסקירת פרטיות משפטית.
+
+## 7. אבטחת מידע והקשחת המוצר
+
+### 7.1 אחסון מקומי
+
+- השתמש ב-iOS Data Protection. קובץ סגור עם מידע רגיש: Complete Protection; קובץ session פעיל ברקע: Complete Unless Open, ולאחר סיום לסגור ולהקשיח. [S1]
+- מפתחות או secrets קטנים יישמרו ב-Keychain, לא ב-UserDefaults. [S2]
+- מסד נתונים מקומי צריך לקבל file protection מתאים ולהיות סגור כאשר אינו בשימוש.
+- אין לשמור נתוני בריאות ב-clipboard, logs, crash breadcrumbs או notification payload מפורט.
+- במעבר האפליקציה לרקע, טשטש מסכים רגישים ב-app switcher.
+- אפשר להציע נעילה עם Face ID/Touch ID כאפשרות משתמש.
+### 7.2 לוגים וקריסות
+
+- לוגים מותרים: state transitions, error codes, firmware/app version ומספרי חבילות ללא ערכים פיזיולוגיים.
+- לוגים אסורים: RR, HR, ECG, טקסט שאלון, timestamps מדויקים של טריגר או מזהה קבוע שמקשר משתמש.
+- אם נוסף crash reporter, יש להגדיר scrubbing, לבטל session replay ולתעד אותו ב-App Privacy.
+- שליחת diagnostic bundle תהיה opt-in ותציג למשתמש בדיוק מה יישלח.
+### 7.3 מודל איומים מינימלי
+
+| איום | בקרה |
+| --- | --- |
+| אדם שפותח את הטלפון | File protection + נעילה אופציונלית + טשטוש app switcher |
+| דליפת log | איסור ערכי בריאות בלוגים וב-crash reports |
+| ייצוא בטעות | אישור מפורש, תצוגה מקדימה ואזהרת רגישות |
+| חיישן שגוי/זר | מסך בחירת חיישן, זיהוי חוזר ואימות שם/מזהה |
+| נתונים פגומים | בדיקות טווח, איכות אות וסימון נתונים חסרים |
+| ספריית צד שלישי | Inventory, version pinning, license/privacy review |
+| אובדן טלפון | הסתמכות על נעילת iOS ו-Data Protection |
+
+## 8. הרשאות iOS ו-HealthKit
+
+### 8.1 Bluetooth
+
+נדרש NSBluetoothAlwaysUsageDescription. הטקסט חייב להסביר שהגישה משמשת להתחברות לחיישן דופק תואם ולקבלת HR/RR. [A1]
+
+> **נוסח מוצע**: האפליקציה משתמשת ב-Bluetooth כדי להתחבר לחיישן דופק תואם ולקבל דופק ומרווחי RR לצורך זיהוי שינויים אישיים.
+
+### 8.2 HealthKit
+
+- אל תבקש HealthKit אם V1 אינה משתמשת בו.
+- אם קוראים נתונים: הוסף HealthKit capability ו-NSHealthShareUsageDescription.
+- אם כותבים נתונים: הוסף גם NSHealthUpdateUsageDescription.
+- בקש רק data types נחוצים ובנקודת השימוש, לא באונבורדינג הכללי.
+- אין להשתמש בנתוני HealthKit לפרסום, שיווק או data mining. [A2][A3]
+### 8.3 Notifications
+
+- בקש הרשאת notifications לאחר שהמשתמש מבין למה היא נחוצה.
+- הודעת Trigger במסך נעול צריכה להיות דיסקרטית: “זוהה שינוי אישי” ולא מידע רגיש מפורט.
+- אפשר למשתמש לבחור: התראה מלאה, דיסקרטית או ללא תצוגה מקדימה.
+- בדוק authorization status בכל שימוש, כי המשתמש יכול לשנות הרשאה. [A4]
+### 8.4 Privacy Manifest ו-App Privacy
+
+- הוסף PrivacyInfo.xcprivacy תקין כאשר האפליקציה או SDKs משתמשים ב-Required Reason APIs או מצהירים על איסוף.
+- בדוק שכל SDK צד שלישי כולל privacy manifest/signature כאשר Apple דורשת זאת.
+- App Privacy ב-App Store Connect חייב להתאים להתנהגות האמיתית של האפליקציה וה-SDKs.
+- נתונים שמעובדים רק על המכשיר ואינם נשלחים למפתח אינם בדרך כלל “collected” לצורך התווית; עדיין יש להסבירם ב-Privacy Policy.
+## 9. Bluetooth, רקע ואמינות ניטור
+
+### 9.1 הגדרות
+
+- הפעל Background Mode מסוג Uses Bluetooth LE accessories / bluetooth-central רק אם הניטור באמת צריך להמשיך ברקע. [A5]
+- השתמש ב-state preservation/restoration עם מזהה יציב ל-CBCentralManager.
+- טפל ב-connect, disconnect, reconnect, Bluetooth off, permission denied ו-low battery.
+- הצג UI ברור: Connected / Reconnecting / No signal / Monitoring stopped.
+### 9.2 מגבלות שחייבים להציג למשתמש
+
+- Force Quit על ידי המשתמש מפסיק את היכולת של iOS להפעיל מחדש את האפליקציה עבור Bluetooth.
+- ב-iOS 26, כללי relaunch תלויים גם באופן הגדרת האביזר; יש לבדוק AccessorySetupKit לפי יעד המערכת. [A6]
+- כיבוי Bluetooth, הסרת הרשאה, חוסר מגע ברצועה או סוללה חלשה יפסיקו ניטור.
+- אין להבטיח 24/7 או “תמיד פעיל” ללא בדיקות על גרסאות iOS ומכשירים נתמכים.
+### 9.3 UX מומלץ לניטור
+
+- Start Monitoring מפורש והסבר קצר למה יימדד.
+- חיווי קבוע בתוך האפליקציה; ב-iOS 26 לשקול Live Activity כשמתאים.
+- Stop Monitoring זמין תמיד.
+- התראה כאשר החיבור אבד יותר מפרק זמן מוגדר.
+- מסך לפני session: הרטבת האלקטרודות, התאמת הרצועה, סוללה וחיבור.
+## 10. מיקרופון והקלטת סביבה
+
+> **החלטת V1**: לא לכלול הקלטת סביבה אוטומטית או ידנית בגרסה הראשונה. היא מוסיפה סיכון App Review, פרטיות של המשתמש ושל אנשים אחרים, Audio Data בתווית הפרטיות ואבטחה מיותרת לפני שהאלגוריתם הוכח.
+
+### 10.1 אם יתווסף בעתיד
+
+- לא מתחילים הקלטה בעקבות Trigger ללא פעולה מפורשת של המשתמש.
+- מבקשים הרשאת מיקרופון רק כאשר המשתמש לוחץ על “הקלט”.
+- מציגים חיווי חזותי/קולי ברור בזמן ההקלטה, timer וכפתור Stop. Apple דורשת הסכמה וחיווי בעת הקלטת פעילות משתמש. [A7]
+- מאפשרים להאזין, למחוק ולשמור רק לאחר אישור.
+- ברירת המחדל היא אחסון מקומי; ללא תמלול או העלאה לענן.
+- מעדכנים Privacy Policy, App Privacy ו-Privacy Manifest בהתאם.
+- מבצעים בדיקה משפטית לגבי הקלטת אנשים נוספים לפי המדינות שבהן האפליקציה זמינה.
+### 10.2 הזרימה הבטוחה
+
+> **Trigger → Notification → User opens app → User chooses Write**: Record → Explicit recording indicator → Review → Save/Delete / אין הקלטה סמויה, אין background recording אוטומטי ואין התחלה לפני פעולה של המשתמש.
+
+## 11. אלגוריתם, דיוק וולידציה
+
+### 11.1 עקרונות פלט
+
+- הפלט הוא הסתברות/מועמד, לא אמת קלינית.
+- האלגוריתם משווה אדם לעצמו ולא לאוכלוסייה רפואית.
+- הצג איכות אות ודרגת ביטחון במונחים פשוטים.
+- כאשר אין מספיק נתונים, יש לומר “אין מספיק נתונים”, לא לנחש.
+- תנועה חזקה או חיבור חלש צריכים לחסום/להוריד ביטחון במקום לייצר Trigger.
+### 11.2 תיעוד פנימי מחייב
+
+- Algorithm Specification: inputs, filters, windows, thresholds, cooldown והחלטות.
+- Data Dictionary: יחידות, timestamp semantics, missing values ו-quality flags.
+- Versioning: כל אירוע נשמר עם algorithm version.
+- Change Log: כל שינוי סף/פילטר מתועד עם סיבה ובדיקות.
+- Claim Register: לכל טענה שיווקית יש ראיה ומקור.
+### 11.3 ולידציה לפני שחרור
+
+| בדיקה | מדד |
+| --- | --- |
+| Parsing BLE | כל RR נקרא נכון, כולל מספר RR בחבילה ו-UInt8/UInt16 HR |
+| Timestamp | שחזור beat time עקבי וללא קפיצות |
+| Latency | זמן מקבלת RR ועד notification מתועד |
+| False alerts | מספר התראות שווא לכל שעת session |
+| Missed events | אירועים שסומנו ידנית ולא זוהו |
+| Motion | הליכה, ריצה, דיבור, נהיגה ושינוי תנוחה |
+| Physiology confounders | קפאין, נשימה עמוקה, אוכל, אימון והתאוששות |
+| Population | מספר משתמשים, ימים וסשנים מגוונים |
+| Reliability | ניתוק, reconnect, lock screen, background ו-force quit |
+
+Apple עשויה לבדוק טענות דיוק הקשורות לבריאות ולבקש מתודולוגיה תומכת. אין לפרסם אחוזי דיוק ללא פרוטוקול ונתונים. [A8]
+
+### 11.4 מחקר משתמשים
+
+בדיקות מוצר רגילות עם הסכמה אינן בהכרח מחקר רפואי. אולם אם אתה מציג את הפעילות כמחקר בריאות בבני אדם, מגייס משתתפים למחקר או מתכוון לפרסם תוצאות מדעיות, יש לבחון ועדת אתיקה והסכמה מדעת. Apple דורשת אישור ועדת אתיקה עצמאית למחקר בריאות בבני אדם. [A9]
+
+## 12. חוויית משתמש ובטיחות
+
+### 12.1 אונבורדינג
+
+- מסך 1: מה האפליקציה עושה - מודעות עצמית ושינוי אישי.
+- מסך 2: מה היא לא עושה - לא אבחון, טיפול או חירום.
+- מסך 3: איך ללבוש H10 ולהבטיח מגע.
+- מסך 4: הסבר הרשאות לפני prompt של iOS.
+- מסך 5: baseline דורש זמן ואינו מיידי.
+- מסך 6: המשתמש מאשר שהוא מבין שייתכנו פספוסים והתראות שווא.
+### 12.2 טיפול בהתראות
+
+- נוסח ניטרלי: “זוהה שינוי פיזיולוגי ביחס לטווח האישי שלך.”
+- פעולות: “מה קרה?”, “לא רלוונטי”, “הזכר לי בעוד דקה”.
+- אין צליל בהלה, צבע אדום רפואי או ניסוח סכנה.
+- Cooldown למניעת הצפה.
+- אפשר להשתיק monitoring או להגדיר שעות.
+### 12.3 Safety Copy
+
+> **נוסח בתוך Settings/About**: Trigger Bitter אינה מיועדת לאבחון, טיפול או מניעה של מצב רפואי או נפשי ואינה מיועדת לשימוש במצב חירום. אם אינך מרגיש טוב או חושש לבריאותך, פנה לאיש מקצוע או לשירותי החירום המקומיים.
+
+## 13. שיווק, App Store וטענות מוצר
+
+### 13.1 מיצוב
+
+- קטגוריה: Health & Fitness.
+- תיאור: personal awareness, physiological patterns, HRV journaling.
+- לא להשתמש בקטגוריה Medical ללא צורך.
+- לא להציג H10 כחלק מהמוצר שלך; להציג אותו כאביזר תואם שהמשתמש מחזיק.
+- לציין אם נדרש חיישן חיצוני כדי שהמשתמש לא יוריד אפליקציה שאינה שימושית עבורו.
+### 13.2 טענות מותרות/אסורות
+
+| טענה | סטטוס | תנאי |
+| --- | --- | --- |
+| מזהה שינוי ביחס ל-baseline אישי | מותר | להסביר מתודולוגיה כללית |
+| עוזר לתעד הקשר ותחושה | מותר | הפונקציה קיימת בפועל |
+| עובד עם Polar H10 | מותר | נבדק בפועל; ללא מצג שותפות |
+| מדויק ב-98% | אסור כרגע | רק לאחר מחקר מתועד |
+| מזהה התקף חרדה | אסור ב-Wellness | דורש בחינה רפואית |
+| מונע טריגרים | אסור | טענת יעילות/טיפול לא מוכחת |
+| ECG רפואי | אסור | H10 והמוצר אינם מיועדים לכך |
+
+### 13.3 נכסי שיווק
+
+- השתמש בצילום עצמאי של H10 או באיור כללי של רצועת חזה.
+- אל תציג את לוגו Polar באייקון, splash screen או שם.
+- Screenshots חייבים להראות UI אמיתי ולא תוצאות מוגזמות.
+- הוסף compatibility disclaimer בתחתית עמוד המוצר.
+- Support URL חייב לכלול דרך קשר אמיתית ועדכנית. [A10]
+### 13.4 מונטיזציה
+
+- פיצ'רים דיגיטליים או subscription בתוך האפליקציה כפופים בדרך כלל ל-In-App Purchase.
+- מנוי חייב לספק ערך מתמשך ולהציג מחיר, תקופה, חידוש וביטול באופן ברור.
+- אין להתנות שימוש בסיסי בהסכמה לאיסוף נתונים שאינו הכרחי.
+- מכירת חיישן פיזי היא עסקת goods outside the app ויכולה להשתמש באמצעי תשלום רגיל, אך אין להציג את H10 כמוצר ממותג שלך.
+## 14. מסמכים משפטיים ותפעוליים
+
+### 14.1 מסמכים חיצוניים
+
+| מסמך | חובה/המלצה | תכולה |
+| --- | --- | --- |
+| Privacy Policy | חובה | נתונים, מטרות, שיתוף, שמירה, מחיקה, זכויות וקשר |
+| Terms of Use / EULA | מומלץ מאוד | רישיון שימוש, מגבלות, אחריות, גיל, סיום |
+| Wellness Disclaimer | חובה במוצר | לא רפואי, לא חירום, אין הבטחת זיהוי |
+| Support Page | חובה מעשית | קשר, FAQ, חיבור H10, פתרון תקלות |
+| Third-Party Notices | חובה לפי ספריות | Polar SDK ורישיונות נוספים |
+| Compatibility Notice | מומלץ | עצמאות מ-Polar וסימני מסחר |
+
+### 14.2 מסמכים פנימיים
+
+- Product Intended Purpose.
+- Data Flow Diagram ו-Data Inventory.
+- Permission Register.
+- SDK / Dependency Register.
+- Algorithm Specification ו-Validation Report.
+- Risk Register ו-Incident Response Plan.
+- Claim Register לכל טקסט שיווקי.
+- App Store Submission Checklist.
+### 14.3 תנאים אם יתווסף חשבון
+
+- Apple דורשת אפשרות להתחיל מחיקת חשבון מתוך האפליקציה. [A11]
+- נדרש תהליך מחיקת נתונים בפועל, לא רק deactivate.
+- יש להגדיר retention, recovery, authentication, reset ו-Sign in with Apple לפי סוגי login.
+- יש לעדכן App Privacy, Privacy Policy וחובות פרטיות לפי המדינות.
+## 15. הכנה ל-App Review
+
+### 15.1 מצב Demo
+
+- DemoProvider עם session מוקלט שמציג חיבור, baseline, Trigger ושאלון.
+- כפתור Demo ברור בכניסה או קוד שהבודק מקבל ב-Review Notes.
+- ה-Demo אינו מציג נתוני אדם אמיתי או מידע מזהה.
+- כל הפיצ'רים המרכזיים נגישים ללא H10.
+### 15.2 Review Notes
+
+- להסביר שהאפליקציה היא Wellness ולא Medical Device.
+- להסביר שה-H10 הוא חיישן צד שלישי נתמך ואינו נמכר או מסופק על ידך.
+- לכתוב שלבים מדויקים להפעלת Demo.
+- לציין שאין backend ושהנתונים נשארים מקומית.
+- לציין את מטרת Background Bluetooth.
+- אם HealthKit קיים - להסביר אילו data types ולמה.
+### 15.3 App Store Connect
+
+- שם, subtitle, description ו-keywords ללא stuffing של “Polar”.
+- Privacy Policy URL ו-Support URL פעילים.
+- App Privacy מדויק, כולל SDKs.
+- Age Rating questionnaire מלא ועדכני; לציין health/wellness honestly.
+- Regulated Medical Device declaration: להשיב שאין אישור רגולטורי ושאינך מציג את V1 כמכשיר רפואי.
+- Export Compliance: להשיב על שאלות ההצפנה; שימוש רק בהצפנת מערכת Apple בדרך כלל אינו דורש מסמכים נוספים, אך עדיין נדרשת הצהרה. [A12]
+- Privacy Manifest תקין ללא שגיאות.
+- Screenshots, preview וטקסט תואמים לבינארי.
+## 16. בדיקות וקריטריוני שחרור
+
+### 16.1 מטריצת מכשירים ומצבים
+
+| מכשיר/חיישן | מצב | בדיקה |
+| --- | --- | --- |
+| iPhone 13 ומעלה | Foreground | חיבור, RR, Trigger, notification |
+| iPhone 13 ומעלה | Background | חיבור ממושך, lock/unlock |
+| iOS 26.x | State restoration | system termination / reconnect |
+| iOS 26.x | Force Quit | להציג שהניטור נעצר |
+| H10 firmware עדכני | סוללה חלשה | אזהרה והמשך בטוח |
+| H10 | רצועה יבשה/מנותקת | No signal / quality low |
+| חיישן BLE אחר | HR/RR standard | תאימות בסיסית |
+| ללא חיישן | Demo | כל מסלול review עובד |
+
+### 16.2 Quality Gates
+
+| שער | תנאי מעבר |
+| --- | --- |
+| G1 - Product | כל הטקסטים עומדים ב-Intended Purpose; אין טענה רפואית. |
+| G2 - Data | אין network calls שמעבירות נתוני בריאות; inventory חתום. |
+| G3 - Security | file protection, Keychain, log redaction ומחיקה נבדקו. |
+| G4 - BLE | reconnect, background, multiple RR, missing data ו-force quit נבדקו. |
+| G5 - Algorithm | validation report קיים; אין claims מעבר לראיות. |
+| G6 - Privacy | Privacy Policy, App Privacy ו-Privacy Manifest תואמים. |
+| G7 - Review | Demo ו-Review Notes נבדקו על מכשיר נקי. |
+| G8 - Legal | Terms/Disclaimer/Trademark copy מוכנים. |
+
+## 17. תפעול לאחר השקה
+
+- לעקוב אחר crashes, disconnect rates ו-false alert feedback ללא איסוף health data מיותר.
+- לנהל changelog לגרסת אלגוריתם ו-SDK.
+- לבדוק App Review Guidelines, Polar SDK licence ו-iOS background behaviour לפני כל release משמעותי.
+- להחזיק ערוץ תמיכה עם תשובות לחיבור, רצועה, סוללה, permissions ו-force quit.
+- להציג Incident Response: עצירת גרסה, הודעה למשתמשים, תיקון ומחיקה במקרה של דליפה.
+- לבדוק firmware/SDK חדשים על H10 לפני עדכון.
+- לשמור תיעוד של תלונות שקשורות לבטיחות או מצג רפואי ולהגיב במהירות.
+### 17.1 מדדים שאפשר למדוד ללא חדירה לפרטיות
+
+- App Store Connect Analytics ונתוני מכירות/הורדות מצרפיים.
+- Crash rate טכני ללא payload רגיש.
+- Feedback ידני שהמשתמש שולח לאחר preview.
+- TestFlight feedback.
+לא להוסיף analytics צד שלישי רק כדי למדוד funnels לפני שיש תכנון פרטיות מסודר.
+
+## 18. שינויים שמחייבים בדיקה מחדש
+
+| שינוי | מה לבדוק מחדש |
+| --- | --- |
+| טענה על חרדה/PTSD/אבחון/טיפול | Medical device classification, clinical evidence, Apple medical review |
+| Cloud sync / backend | ישראל, GDPR, security, retention, deletion, vendors, breach |
+| חשבון משתמש | Account deletion, authentication, privacy rights |
+| מיקרופון / תמלול | Consent, recording laws, Audio Data, security, App Review |
+| AI שמסיק מצב נפשי | Claims, sensitive profiling, bias, AI/privacy regulation |
+| Dashboard למטפל | Clinical intended use, professional liability, access controls |
+| מחקר רשמי או פרסום | Ethics review, informed consent, study protocol |
+| שימוש בילדים | Children privacy, parental consent, age assurance |
+| פרסום ממומן/Ads | איסור שימוש ב-health data, ATT, SDK review |
+| מכירת H10 בחבילה | Distribution, consumer terms, warranties, trademark copy |
+| שימוש בלוגו Polar | רשות מפורשת / trademark licence |
+| כניסה למדינה חדשה | Local privacy, recording, consumer and wellness rules |
+
+> **Stop Rule**: כאשר אחד השינויים בטבלה נכנס ל-roadmap, עוצרים לפני פיתוח מלא ומעדכנים: Intended Purpose, Data Flow, Privacy Policy, App Privacy, Risk Register ו-Launch Checklist.
+
+## 19. נוסחים מוכנים
+
+### 19.1 תיאור קצר בעברית
+
+> **App Store**: אתר / Trigger Bitter מתחברת לחיישן דופק Bluetooth תואם, בונה טווח אישי מדופק ו-HRV ומסמנת רגעים של שינוי פיזיולוגי. לאחר כל סימון אפשר לתעד מה קרה, מה הרגשת והאם ההתראה הייתה רלוונטית, כדי לזהות דפוסים אישיים לאורך זמן.
+
+### 19.2 Disclaimer בעברית
+
+> **Disclaimer**: Trigger Bitter מיועדת למודעות עצמית ולרווחה כללית בלבד. היא אינה מכשיר רפואי, אינה מאבחנת או מטפלת במצב רפואי או נפשי, אינה מחליפה ייעוץ מקצועי ואינה מיועדת לשימוש במצב חירום. ייתכנו פספוסים והתראות שווא.
+
+### 19.3 התראת Trigger
+
+> **Notification**: זוהה שינוי פיזיולוגי ביחס לטווח האישי שלך. רוצה לתעד מה קרה?
+
+### 19.4 Bluetooth Purpose String
+
+> **NSBluetoothAlwaysUsageDescription**: האפליקציה משתמשת ב-Bluetooth כדי להתחבר לחיישן דופק תואם ולקבל דופק ומרווחי RR לצורך זיהוי שינויים אישיים.
+
+### 19.5 HealthKit Purpose String - רק אם משתמשים
+
+> **NSHealthShareUsageDescription**: האפליקציה קוראת דופק ו-HRV מ-Apple Health כדי להציג את הדפוסים האישיים שלך ולשפר את ההקשר של המדידות. הנתונים אינם משמשים לאבחון רפואי.
+
+### 19.6 Polar compatibility
+
+> **English legal line**: Polar and Polar H10 are trademarks of Polar Electro Oy. Trigger Bitter is an independent application and is not affiliated with, endorsed by, or sponsored by Polar Electro Oy.
+
+### 19.7 Review Notes מוצעים
+
+> **App Review Notes**: Trigger Bitter is a general wellness and personal-awareness app, not a medical device. It connects to compatible Bluetooth heart-rate sensors and processes heart-rate and RR data locally on the user’s device. No health or journal data is uploaded to our servers. A Polar H10 is not required for review: tap “Demo Mode” on the first screen, select the included sample session, and follow the on-screen steps to view baseline creation, a physiological-change candidate, the local notification flow, and the context questionnaire. Background Bluetooth is used only while the user has explicitly started a monitoring session.
+
+## 20. Checklist סופי
+
+מוצר ושיווק
+
+- [ ] Intended Purpose מאושר
+- [ ] כל המסכים משתמשים במונחי Wellness
+- [ ] אין claims רפואיים או אחוזי דיוק לא-מוכחים
+- [ ] Polar מוצגת כתאימות בלבד
+- [ ] Disclaimer מופיע באונבורדינג, About ובאתר
+פרטיות
+
+- [ ] אין backend / accounts / analytics צד שלישי
+- [ ] Privacy Policy זמינה באתר ובאפליקציה
+- [ ] Data inventory תואם לקוד
+- [ ] מחיקת כל הנתונים נבדקה
+- [ ] ייצוא דורש פעולה מפורשת ואזהרה
+iOS
+
+- [ ] Bluetooth purpose string תקין
+- [ ] HealthKit לא קיים או מוגדר באופן מינימלי
+- [ ] Notification permission מבוקשת בהקשר
+- [ ] Privacy Manifest תקין
+- [ ] Background mode מוגדר רק לצורך BLE
+- [ ] Export compliance הושלם
+אבטחה
+
+- [ ] File protection נבדק במסך נעול
+- [ ] Keychain לשימוש בסודות
+- [ ] אין health data בלוגים
+- [ ] App switcher מטושטש
+- [ ] Dependency/SDK inventory מעודכן
+BLE ואלגוריתם
+
+- [ ] כל RR בחבילה נקרא
+- [ ] beatTime/receivedTime/detectionTime נפרדים
+- [ ] reconnect ו-force quit נבדקו
+- [ ] איכות אות ותנועה מטופלות
+- [ ] Validation report קיים
+- [ ] Algorithm version נשמר
+App Review
+
+- [ ] Demo Mode מלא עובד ללא H10
+- [ ] Review Notes ברורים
+- [ ] Support URL ו-contact פעילים
+- [ ] App Privacy מדויק
+- [ ] Age Rating ו-Regulated Medical Device declaration הושלמו
+- [ ] Screenshots תואמים למוצר
+> **Definition of Done**: V1 מוכנה להגשה רק כאשר כל תיבות החובה מסומנות, Demo עובד על מכשיר נקי, ואין שום network request בלתי מוסבר או טקסט שיכול להתפרש כאבחון, טיפול או התראת חירום.
+
+## 21. מקורות רשמיים
+
+המקורות נבדקו ב-27 ביולי 2026. לפני שחרור עתידי יש לבדוק אם עודכנו.
+
+| קוד | רשות | מקור | קישור |
+| --- | --- | --- | --- |
+| A1 | Apple | NSBluetoothAlwaysUsageDescription | פתח מקור רשמי |
+| A2 | Apple | Protecting user privacy in HealthKit | פתח מקור רשמי |
+| A3 | Apple | App Review Guidelines - Health and Health Research | פתח מקור רשמי |
+| A4 | Apple | Asking permission to use notifications | פתח מקור רשמי |
+| A5 | Apple | Configuring background execution modes | פתח מקור רשמי |
+| A6 | Apple | TN3115 Bluetooth State Restoration app relaunch rules | פתח מקור רשמי |
+| A7 | Apple | App Review Guideline 2.5.14 - recording consent and indication | פתח מקור רשמי |
+| A8 | Apple | App Review Guideline 1.4.1 - health accuracy claims | פתח מקור רשמי |
+| A9 | Apple | App Review Guideline 5.1.3(iv) - human subject research | פתח מקור רשמי |
+| A10 | Apple | App Store Connect - Support URL | פתח מקור רשמי |
+| A11 | Apple | Offering account deletion in your app | פתח מקור רשמי |
+| A12 | Apple | Export compliance documentation for encryption | פתח מקור רשמי |
+| A13 | Apple | Privacy manifests | פתח מקור רשמי |
+| A14 | Apple | App Privacy Details | פתח מקור רשמי |
+| S1 | Apple | Encrypting your app’s files / Data Protection | פתח מקור רשמי |
+| S2 | Apple | Using the Keychain to manage user secrets | פתח מקור רשמי |
+| P1 | Polar | Polar BLE SDK License | פתח מקור רשמי |
+| P2 | Polar | Polar H10 SDK features | פתח מקור רשמי |
+| P3 | Polar | Polar H10 User Manual - not for medical purposes | פתח מקור רשמי |
+| P4 | Polar | Legal Notice and trademarks | פתח מקור רשמי |
+| B1 | Bluetooth SIG | Heart Rate Service specification | פתח מקור רשמי |
+| R1 | FDA | General Wellness: Policy for Low Risk Devices, January 2026 | פתח מקור רשמי |
+| R2 | European Commission | MDCG guidance on qualification and classification of software | פתח מקור רשמי |
+| R3 | European Union | Medical Device Regulation (EU) 2017/745 | פתח מקור רשמי |
+| D1 | הרשות להגנת הפרטיות | מדריך מקצועי - תיקון 13 לחוק הגנת הפרטיות | פתח מקור רשמי |
+| D2 | הרשות להגנת הפרטיות | חובות בעל שליטה במאגר מידע | פתח מקור רשמי |
+| D3 | European Union | General Data Protection Regulation (EU) 2016/679 | פתח מקור רשמי |
+
+> **תחזוקת המסמך**: יש לעדכן מסמך זה לפני כל גרסה שמשנה: איסוף נתונים, הרשאות, SDKs, אחסון, claims, חיישנים, שיווק, מדינות הפצה או אוכלוסיית משתמשים.
