@@ -12,6 +12,10 @@ struct SettingsScreen: View {
         Binding(get: { coordinator.biologicalSex }, set: { coordinator.biologicalSex = $0 })
     }
 
+    private var modeBinding: Binding<SensorMode> {
+        Binding(get: { coordinator.sensorMode }, set: { coordinator.sensorMode = $0 })
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -28,6 +32,28 @@ struct SettingsScreen: View {
                             action: { Task { await coordinator.requestNotifications() } }
                         )
                     } label: { Label("התראות", systemImage: "bell") }
+                }
+
+                if FeatureFlags.bleStrapEnabled {
+                    Section {
+                        Picker("מקור המדידה", selection: modeBinding) {
+                            Text("Apple Watch").tag(SensorMode.appleWatch)
+                            Text("רצועת דופק").tag(SensorMode.bleStrap)
+                        }
+                        NavigationLink {
+                            StrapSetupView()
+                        } label: { Label("רצועת דופק", systemImage: "sensor.tag.radiowaves.forward") }
+                    } header: {
+                        Text("מצב חיישן")
+                    } footer: {
+                        Text("Apple Watch מודד כמה פעמים ביום במנוחה — מספיק לזיהוי שינוי מתמשך. רצועת דופק מודדת ברציפות בין פעימה לפעימה, ומאפשרת גם זיהוי בזמן אמת וקוהרנטיות מדויקת. שינוי המצב ייכנס לתוקף בהפעלה הבאה.")
+                    }
+
+                    Section {
+                        IndicatorAvailabilityList(capabilities: coordinator.capabilities)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                    }
                 }
 
                 Section {

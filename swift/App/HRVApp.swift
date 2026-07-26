@@ -10,6 +10,9 @@ struct HRVApp: App {
     let container: ModelContainer
     @State private var coordinator: MonitoringCoordinator
     @State private var coherence: CoherenceSessionController
+    @State private var strap: StrapMonitor
+    /// Bridges strap beats into the coherence session while one is running.
+    private let strapBeats = StrapHeartRateSource()
 
     init() {
         do {
@@ -21,18 +24,34 @@ struct HRVApp: App {
         let context = ModelContext(container)
         let repo = SwiftDataRepository(context: context)
         _coordinator = State(initialValue: MonitoringCoordinator(repository: repo, context: context))
-        // Track J (behind FeatureFlags.coherenceEnabled). On a real device the
-        // beats come from the paired watch's workout session; the simulator has
-        // no HKWorkoutSession, so it falls back to a synthetic stream (keeps the
-        // dev/screenshot/test path working).
-        let coherenceSource: HeartRateSource
+        // The BLE provider needs real hardware, which the Simulator has none of,
+        // so simulator builds get a synthetic strap that drives the identical
+        // pipeline (and `-strapBpmOnly` exercises the heart-rate-only path).
+        let provider: HeartRateProviding
         #if targetEnvironment(simulator)
-        coherenceSource = SimulatedHeartRateSource(coherent: true)
+        provider = SimulatedHeartRateProvider(
+            sendsRR: !ProcessInfo.processInfo.arguments.contains("-strapBpmOnly"))
         #else
-        coherenceSource = WatchWorkoutHeartRateSource()
+        provider = BLEHeartRateProvider()
         #endif
+        let strap = StrapMonitor(provider: provider)
+        _strap = State(initialValue: strap)
+
+        // Coherence beats follow the selected mode: the strap when it's driving,
+        // otherwise the watch workout session (or a synthetic stream in the
+        // Simulator, which has no HKWorkoutSession).
+        let watchSource: HeartRateSource
+        #if targetEnvironment(simulator)
+        watchSource = SimulatedHeartRateSource(coherent: true)
+        #else
+        watchSource = WatchWorkoutHeartRateSource()
+        #endif
+        let beats = strapBeats
+        let router = RoutingHeartRateSource {
+            SensorMode.current == .bleStrap ? beats : watchSource
+        }
         _coherence = State(initialValue: CoherenceSessionController(
-            source: coherenceSource,
+            source: router,
             context: ModelContext(container)))
     }
 
@@ -41,7 +60,9 @@ struct HRVApp: App {
             RootView()
                 .environment(coordinator)
                 .environment(coherence)
+                .environment(strap)
                 .task {
+                    wireStrap()
                     #if DEBUG
                     // Dev/UI-test hooks (simulator can't be driven through
                     // Settings headlessly): `-seedDemoData` loads the normal
@@ -66,5 +87,23 @@ struct HRVApp: App {
                 }
         }
         .modelContainer(container)
+    }
+
+    /// Connect the strap pipeline to storage, detection and the live coherence
+    /// session. Strap windows are persisted and charted, but never fed into the
+    /// passive SDNN baseline -- StrapMonitor runs its own detector.
+    @MainActor
+    private func wireStrap() {
+        strap.onSample = { [coordinator] sample in
+            coordinator.recordStrapSample(sample)
+            coordinator.strapCapabilities = strap.capabilities
+        }
+        strap.onLiveEvent = { [coordinator] event in
+            coordinator.recordLiveEvent(event)
+        }
+        strap.onBeat = { [strapBeats] ibi in
+            strapBeats.ingest(ibiMs: ibi)
+        }
+        if SensorMode.current == .bleStrap { strap.resumeIfPaired() }
     }
 }

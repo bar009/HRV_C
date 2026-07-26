@@ -17,6 +17,7 @@ public enum HRVMetric: String, Sendable {
 public enum HRVSource: String, Sendable {
     case healthKitDirect  // value read straight from HealthKit
     case beatSeries       // derived from HKHeartbeatSeriesSample
+    case bleStrap         // computed from a Bluetooth strap's RR stream
 }
 
 /// A single normalized HRV reading (Deep Dive A.5).

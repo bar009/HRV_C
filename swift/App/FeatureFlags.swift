@@ -26,6 +26,11 @@ enum FeatureFlags {
     /// no permissions — so it's safe to ship on. Flagged for a clean off-switch.
     static var calmPoleEnabled: Bool { true }
 
+    /// Bluetooth heart-rate strap mode. The mode itself defaults to Apple Watch,
+    /// so turning this on only surfaces the option -- nothing changes for a user
+    /// who never pairs a strap.
+    static var bleStrapEnabled: Bool { true }
+
     /// Beat-series metrics (RMSSD/pNN50/SDSD from HKHeartbeatSeriesSample).
     /// ENABLED for TestFlight: it works on iPhone alone (no watch app needed)
     /// and doubles as the Q-A field test -- the "מדדים מפורטים" card appears

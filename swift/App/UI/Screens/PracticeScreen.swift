@@ -6,6 +6,7 @@ import HRVCore
 /// Wellness-framed; takes only HeartMath's math, never the metaphysics.
 struct PracticeScreen: View {
     @Environment(CoherenceSessionController.self) private var session
+    @Environment(MonitoringCoordinator.self) private var coordinator
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
@@ -126,6 +127,15 @@ struct PracticeScreen: View {
             if session.hasCoherence {
                 CoherenceRing(level: session.level, band: session.band)
                     .transition(.opacity.combined(with: .scale))
+                // Honesty: watch-derived beats are reconstructed from heart-rate
+                // samples, not measured per beat, so the reading is approximate.
+                if case .approximate = coordinator.availability(of: .coherence) {
+                    Text("מדידה מקורבת — לדיוק מלא נדרשת רצועת דופק")
+                        .font(.hrvCaption).foregroundStyle(t.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, HRVLayout.space24)
+                }
             }
             if session.isReceivingBeats {
                 LiveBeatPanel(bpm: session.currentBPM,

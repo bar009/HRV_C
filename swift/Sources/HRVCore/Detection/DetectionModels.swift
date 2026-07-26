@@ -50,6 +50,14 @@ public struct DetectorConfig: Sendable {
         self.cooldown = cooldown
         self.alertOnDropOnly = alertOnDropOnly
     }
+
+    /// Preset for the continuous strap path, where windows arrive every ~30 s
+    /// instead of a handful of times a day. Persistence of 4 windows ≈ 2 minutes
+    /// of a sustained drop before alerting, and the cooldown shrinks
+    /// accordingly. Starting values only -- real tuning is the calibration
+    /// study (Q-B). Never use this with the sparse passive SDNN feed.
+    public static let live = DetectorConfig(k: 2.0, persistenceWindow: 4,
+                                            cooldown: 30 * 60, alertOnDropOnly: true)
 }
 
 /// Contextual tags used for stratification (Deep Dive B.5).

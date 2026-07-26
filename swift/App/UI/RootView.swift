@@ -62,6 +62,12 @@ struct RootView: View {
         }
         .background(t.surfaceBackground)
         .sheet(isPresented: $showSettings) { SettingsScreen() }
+        #if DEBUG
+        // QA hook: Settings is a sheet, so it can't be reached headlessly.
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("-openSettings") { showSettings = true }
+        }
+        #endif
     }
 
     private func header(_ t: HRVTheme) -> some View {

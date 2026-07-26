@@ -132,6 +132,15 @@ final class MonitoringCoordinator {
         guard !isDemoMode else { refresh(); return }
         #if canImport(HealthKit)
         guard HealthKitService.isAvailable else { return }
+        // In chest-strap mode the live path owns detection; we still read
+        // HealthKit for context (sleep/workouts/resting HR), which the strap
+        // cannot provide, but the passive SDNN detector stays out of the way.
+        guard sensorMode == .appleWatch else {
+            await requestHealthAccess()
+            refreshRestingHeartRate()
+            refresh()
+            return
+        }
         await requestHealthAccess()
         health.startObservingSDNN(
             anchorProvider: { [weak self] key in self?.repository.anchor(for: key) },
@@ -179,11 +188,32 @@ final class MonitoringCoordinator {
     /// Store a computed RMSSD as its own sample stream, so the Trends RMSSD
     /// view can chart it over time (kept separate from the sdnnApple detection
     /// samples).
-    private func persistRmssd(_ value: Double, at date: Date = Date()) {
+    private func persistRmssd(_ value: Double, at date: Date = Date(),
+                              source: HRVSource = .beatSeries, context label: String = "rest") {
         repository.save(ProcessedHRVSample(
             timestamp: date, lnRmssd: log(value), rawValueMs: value,
             metric: HRVMetric.rmssdComputed.rawValue, quality: SampleQuality.high.rawValue,
-            context: "rest", source: HRVSource.beatSeries.rawValue))
+            context: label, source: source.rawValue))
+    }
+
+    // MARK: chest-strap (live) path
+    //
+    // Strap windows are stored and charted like any other RMSSD stream, but
+    // they must NOT be fed to `ingest` -- that would pool a 30-second RMSSD
+    // window into the passive SDNN baseline. Detection for this source lives in
+    // StrapMonitor's own engine; here we only persist and surface.
+
+    /// Store one strap-derived window so it appears in the Trends RMSSD chart.
+    func recordStrapSample(_ sample: HRVSample) {
+        persistRmssd(sample.valueMs, at: sample.timestamp, source: .bleStrap, context: "live")
+    }
+
+    /// A confirmed live drop from the strap detector. Reuses the normal event
+    /// path so it groups, notifies, and lands in the same Events history with
+    /// the acute/sustained shape and time-to-awareness metric.
+    func recordLiveEvent(_ event: AlertEvent) {
+        recordEvent(event)
+        refresh()
     }
 
     /// Computed-RMSSD samples in the window, for the Trends RMSSD chart.
@@ -489,6 +519,37 @@ final class MonitoringCoordinator {
     }
     var averageAwarenessSeconds: TimeInterval? { AwarenessMetrics.average(awarenessGaps) }
     var awarenessIsImproving: Bool? { AwarenessMetrics.isImproving(chronological: awarenessGaps) }
+
+    // MARK: sensor mode + capabilities
+
+    /// The user's explicit choice of data source. Changing it takes effect on
+    /// the next `start()` (relaunch), which keeps the observer wiring simple.
+    var sensorMode: SensorMode {
+        get { SensorMode.current }
+        set { SensorMode.current = newValue }
+    }
+
+    /// What the app can actually measure right now: the mode's own capabilities
+    /// merged with HealthKit context when access was granted. Every feature
+    /// should resolve through `IndicatorResolver` against this rather than
+    /// assuming a sensor exists.
+    var capabilities: SensorCapabilities {
+        if isDemoMode { return .demo }
+        var caps = strapCapabilities ?? (sensorMode == .bleStrap ? .none : .appleWatchPassive)
+        // Context (sleep/workouts/resting HR) comes from Apple Health regardless
+        // of which sensor drives detection, so a strap user who also wears a
+        // watch keeps it.
+        if isHealthAuthorized { caps = caps.merging(.appleWatchPassive) }
+        return caps
+    }
+
+    /// Set by the app layer from the live StrapMonitor, so `capabilities`
+    /// reflects the actual connected device (including a heart-rate-only strap).
+    var strapCapabilities: SensorCapabilities?
+
+    func availability(of indicator: HealthIndicator) -> IndicatorAvailability {
+        IndicatorResolver.availability(of: indicator, given: capabilities)
+    }
 
     // MARK: personal calibration (gender)
 
