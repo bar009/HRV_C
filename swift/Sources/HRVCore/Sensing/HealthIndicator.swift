@@ -18,6 +18,7 @@ public enum HealthIndicator: String, CaseIterable, Sendable {
     case restingHeartRate
     case sleepContext
     case workoutContext
+    case motionContext        // movement gating for continuous detection
     case sustainedDetection   // the slow "silent" change
     case liveTriggers         // catching a change within minutes
 }
@@ -33,6 +34,8 @@ public enum IndicatorLimitation: String, Sendable, Equatable {
     case needsContinuousCoverage
     /// Comes from Apple Health, which isn't available/authorized here.
     case needsHealthKit
+    /// Needs motion & fitness access to tell movement from rest.
+    case needsMotionAccess
     /// No sensor is connected at all.
     case noSensor
 }
@@ -89,6 +92,9 @@ public enum IndicatorResolver {
         case .workoutContext:
             return caps.workoutContext ? .available : .unavailable(.needsHealthKit)
 
+        case .motionContext:
+            return caps.motionContext ? .available : .unavailable(.needsMotionAccess)
+
         case .sustainedDetection:
             // Either Apple's passive SDNN over days, or continuous beat-to-beat
             // windows of our own.
@@ -103,8 +109,12 @@ public enum IndicatorResolver {
             switch caps.rrFidelity {
             case .none:          return .unavailable(.needsBeatToBeat)
             case .derivedFromHR: return .unavailable(.needsBeatToBeat)
-            case .beatToBeat:    return caps.continuousCoverage
-                                    ? .available : .unavailable(.needsContinuousCoverage)
+            case .beatToBeat:
+                guard caps.continuousCoverage else { return .unavailable(.needsContinuousCoverage) }
+                // Without movement gating a live trigger cannot tell a stress
+                // drop from "you stood up and walked" -- it still works, but it
+                // will misfire, and the user deserves to be told.
+                return caps.motionContext ? .available : .approximate(.needsMotionAccess)
             }
         }
     }
@@ -136,6 +146,7 @@ public extension SensorCapabilities {
             restingHeartRate: restingHeartRate || other.restingHeartRate,
             sleepContext: sleepContext || other.sleepContext,
             workoutContext: workoutContext || other.workoutContext,
-            batteryReadout: batteryReadout || other.batteryReadout)
+            batteryReadout: batteryReadout || other.batteryReadout,
+            motionContext: motionContext || other.motionContext)
     }
 }

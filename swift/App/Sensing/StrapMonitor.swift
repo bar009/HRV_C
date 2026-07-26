@@ -35,14 +35,21 @@ final class StrapMonitor {
     /// Raw beats, for the live coherence session.
     var onBeat: ((Double) -> Void)?
 
+    /// Latest movement classification, and whether gating is active at all.
+    private(set) var motionState: MotionState = .unknown
+    var hasMotionContext: Bool { motion?.isAvailable ?? false }
+
     // ---- internals ----
     private let provider: HeartRateProviding
+    private let motion: MotionContextProviding?
+    private var gate = MotionGate()
     private var windower = RRWindower()
     private let engine: BaselineEngine
     private var detector: AnomalyDetector
 
-    init(provider: HeartRateProviding) {
+    init(provider: HeartRateProviding, motion: MotionContextProviding? = nil) {
         self.provider = provider
+        self.motion = motion
         // A continuous feed builds a usable distribution within hours, so the
         // live baseline needs a much shorter warm-up than the passive one.
         let engine = BaselineEngine(windowDays: 14, minBaselineDays: 1, k: DetectorConfig.live.k)
@@ -57,6 +64,12 @@ final class StrapMonitor {
         }
         provider.onMeasurement = { [weak self] m, at in
             Task { @MainActor in self?.handle(m, at: at) }
+        }
+        motion?.onMotion = { [weak self] state, at in
+            Task { @MainActor in
+                self?.motionState = state
+                self?.gate.record(state, at: at)
+            }
         }
     }
 
@@ -77,10 +90,25 @@ final class StrapMonitor {
 
     private func handleState(_ s: ProviderState) {
         state = s
-        capabilities = provider.capabilities
+        capabilities = effectiveCapabilities
         batteryPercent = provider.batteryPercent
-        // A window must never straddle a coverage gap.
-        if !s.isConnected { windower.reset(); bufferedBeats = 0 }
+        if s.isConnected {
+            // Only classify movement while a sensor is actually streaming.
+            motion?.start()
+        } else {
+            // A window must never straddle a coverage gap.
+            motion?.stop()
+            gate.reset()
+            windower.reset()
+            bufferedBeats = 0
+        }
+    }
+
+    /// The provider's own capabilities plus motion gating when it's available.
+    private var effectiveCapabilities: SensorCapabilities {
+        var caps = provider.capabilities
+        caps.motionContext = motion?.isAvailable ?? false
+        return caps
     }
 
     private func handleDiscovery(_ d: DiscoveredDevice) {
@@ -91,7 +119,7 @@ final class StrapMonitor {
     private func handle(_ m: HeartRateMeasurement, at time: Date) {
         currentBPM = m.bpm
         batteryPercent = provider.batteryPercent
-        capabilities = provider.capabilities
+        capabilities = effectiveCapabilities
         guard m.hasRR else { return }   // BPM-only device: nothing to compute
 
         for ibi in m.rrIntervalsMs { onBeat?(ibi) }
@@ -114,8 +142,12 @@ final class StrapMonitor {
                             quality: metrics.quality, source: .bleStrap,
                             sampleCount: metrics.beatCount))
 
-        // Live detection on our own baseline only.
-        if let event = detector.evaluate(timestamp: time, rmssdValue: rmssd) {
+        // Live detection on our own baseline only, and only for windows taken
+        // at rest: a drop caused by standing up or walking is not a signal.
+        // The detector itself drops non-restful samples from BOTH the baseline
+        // and alerting, so a moving window is simply skipped.
+        let context = gate.sampleContext(at: time)
+        if let event = detector.evaluate(timestamp: time, rmssdValue: rmssd, context: context) {
             onLiveEvent?(event)
         }
     }

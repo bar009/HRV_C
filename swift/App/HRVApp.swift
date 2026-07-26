@@ -34,7 +34,16 @@ struct HRVApp: App {
         #else
         provider = BLEHeartRateProvider()
         #endif
-        let strap = StrapMonitor(provider: provider)
+        // Movement gating: a strap has no workouts/sleep to tell rest from
+        // activity, so the phone's own activity classifier supplies it -- for
+        // every strap brand, without a third-party SDK.
+        let motion: MotionContextProviding?
+        #if canImport(CoreMotion)
+        motion = CoreMotionContextProvider()
+        #else
+        motion = nil
+        #endif
+        let strap = StrapMonitor(provider: provider, motion: motion)
         _strap = State(initialValue: strap)
 
         // Coherence beats follow the selected mode: the strap when it's driving,

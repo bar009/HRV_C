@@ -79,13 +79,47 @@ indicator switches off with an explanation rather than showing a blank screen.
 | RMSSD / pNN50 / SDSD | ~ occasional¹ | ~ approx | ✓ | ✓ noisier | ✗ |
 | Coherence | ✗ | ~ **approx²** | ✓ | ~ noisier | ✗ |
 | Resting HR · sleep · workout context | ✓ | ✓ | ✗³ | ✗³ | ✗³ |
+| Motion gating | n/a | n/a | ✓ (phone) | ✓ (phone) | ✓ (phone) |
 | Sustained detection | ✓ (hours–days) | ✓ | ✓ (minutes) | ✓ | ✗ |
-| **Live triggers** | ✗ | ✗ | ✓ ~2 min | ✓ | ✗ |
+| **Live triggers** | ✗ | ✗ | ✓ ~2 min⁴ | ✓⁴ | ✗ |
 
 ¹ only when an `HKHeartbeatSeriesSample` happens to exist.
 ² HR-derived, not beat-to-beat — labelled as approximate in the UI.
 ³ still available if the user also wears a watch: HealthKit context is merged in
 regardless of which sensor drives detection (`SensorCapabilities.merging`).
+⁴ resolves to **approximate** without motion access — see below.
+
+---
+
+## Motion gating (why strap mode needs it)
+
+A strap reports no workouts and no sleep, so the context that keeps the Apple
+Watch path honest is simply absent. Without a movement signal, an HRV drop
+caused by standing up or walking to the kitchen is indistinguishable from a
+stress event — and continuous live triggering would misfire constantly.
+
+`MotionGate` (`Sources/HRVCore/Sensing/MotionGate.swift`) closes this: movement
+disqualifies the window it occurred in **plus a recovery buffer** afterwards
+(HRV stays suppressed for a while once you stop moving — the same idea as
+`ContextClassifier.postWorkoutRecovery`). Non-restful windows are still stored
+and charted; they are just never allowed to alert, and never enter the baseline.
+
+The source sits behind `MotionContextProviding`:
+
+- **`CoreMotionContextProvider` (shipping)** — the phone's own activity
+  classifier. Works with **every** strap brand, needs no third-party SDK, and
+  the motion coprocessor does the work so battery cost is negligible.
+- **A Polar chest-accelerometer provider (not built)** — would add true
+  *posture* (lying / sitting / standing), which shifts HRV on its own. It
+  requires Polar's proprietary PMD service via the Polar BLE SDK, so it is
+  Polar-only and pulls in a heavyweight dependency; it must never be the only
+  route to motion context. Worth adding once real hardware is available to
+  validate against.
+
+Low-confidence classifications report `.unknown`, and `.unknown` counts as
+restful on purpose: missing motion data must not silently discard every sample
+and disable detection. When motion access is unavailable, `liveTriggers`
+resolves to **approximate**, and the UI says so.
 
 ---
 
@@ -120,6 +154,8 @@ drop), `cooldown 30 min`. Starting values; real tuning is the calibration study
 | RR → analysis windows (pure) | `Sources/HRVCore/Signal/RRWindower.swift` |
 | Provider protocol + simulator | `App/Sensing/HeartRateProvider.swift` |
 | CoreBluetooth transport | `App/Sensing/BLEHeartRateProvider.swift` |
+| Motion gating rule (pure) | `Sources/HRVCore/Sensing/MotionGate.swift` |
+| Motion source (CoreMotion) | `App/Sensing/MotionContextProvider.swift` |
 | Continuous monitor + live detector | `App/Sensing/StrapMonitor.swift` |
 | Mode enum + persistence | `App/Sensing/SensorMode.swift` |
 | Coherence source routing | `App/Coherence/RoutingHeartRateSource.swift` |

@@ -14,9 +14,15 @@ final class IndicatorResolverTests: XCTestCase {
     func testChestStrapDoesAllHRVAndLiveTriggers() {
         let c = SensorCapabilities.bleChestStrap
         for i in [HealthIndicator.rmssd, .pnn50, .sdsd, .coherence, .liveBPM,
-                  .liveTriggers, .sustainedDetection] {
+                  .sustainedDetection] {
             XCTAssertEqual(avail(i, c), .available, "\(i) should be available on a chest strap")
         }
+        // Live triggers work, but a strap alone has no movement signal, so they
+        // will misfire on walking until motion gating is on.
+        XCTAssertEqual(avail(.liveTriggers, c), .approximate(.needsMotionAccess))
+        var gated = c
+        gated.motionContext = true
+        XCTAssertEqual(avail(.liveTriggers, gated), .available)
     }
 
     func testChestStrapHasNoHealthKitContext() {
@@ -76,7 +82,8 @@ final class IndicatorResolverTests: XCTestCase {
 
     func testMergingGivesStrapLiveDataPlusHealthKitContext() {
         let merged = SensorCapabilities.bleChestStrap.merging(.appleWatchPassive)
-        XCTAssertEqual(avail(.liveTriggers, merged), .available)   // from the strap
+        // From the strap -- usable, though still ungated without motion access.
+        XCTAssertTrue(avail(.liveTriggers, merged).isUsable)
         XCTAssertEqual(avail(.sleepContext, merged), .available)   // from the watch
         XCTAssertEqual(avail(.sdnn, merged), .available)
         XCTAssertEqual(merged.rrFidelity, .beatToBeat)

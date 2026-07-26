@@ -64,6 +64,7 @@ struct IndicatorAvailabilityList: View {
         case .restingHeartRate:   return "דופק במנוחה"
         case .sleepContext:       return "נתוני שינה"
         case .workoutContext:     return "נתוני אימון"
+        case .motionContext:      return "זיהוי תנועה"
         case .sustainedDetection: return "זיהוי שינוי מתמשך"
         case .liveTriggers:       return "זיהוי בזמן אמת"
         }
@@ -80,6 +81,8 @@ struct IndicatorAvailabilityList: View {
             return "דורש מדידה רציפה לאורך היום"
         case .needsHealthKit:
             return "מגיע מ-Apple Health"
+        case .needsMotionAccess:
+            return "דורש הרשאת תנועה — בלעדיה ייתכנו התראות שווא בזמן הליכה"
         case .noSensor:
             return "אין חיישן מחובר"
         }

@@ -139,6 +139,64 @@ final class StrapPipelineTests: XCTestCase {
         XCTAssertEqual(coordinator.rmssdSamples(since: .distantPast).count, 40)
     }
 
+    // MARK: motion gating
+
+    func testMotionContextIsReportedInCapabilities() async {
+        let provider = MockProvider()
+        let motion = SimulatedMotionContextProvider()
+        let monitor = StrapMonitor(provider: provider, motion: motion)
+
+        provider.connect(UUID())
+        await settle()
+        XCTAssertTrue(monitor.capabilities.motionContext)
+        XCTAssertTrue(monitor.hasMotionContext)
+        // With gating on, live triggers are fully available rather than
+        // "approximate".
+        XCTAssertEqual(IndicatorResolver.availability(of: .liveTriggers,
+                                                      given: monitor.capabilities), .available)
+    }
+
+    func testWalkingSuppressesLiveEventsButStillStoresSamples() async {
+        let provider = MockProvider()
+        let motion = SimulatedMotionContextProvider()
+        let monitor = StrapMonitor(provider: provider, motion: motion)
+        var samples: [HRVSample] = []
+        var events: [AlertEvent] = []
+        monitor.onSample = { samples.append($0) }
+        monitor.onLiveEvent = { events.append($0) }
+
+        provider.connect(UUID())
+        await settle()
+
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        // The user starts walking, then the strap keeps streaming.
+        motion.emit(.walking, at: t0)
+        await settle()
+        provider.emitBeats(200, from: t0)
+        await settle()
+
+        // Windows are still recorded (the data is real)...
+        XCTAssertFalse(samples.isEmpty)
+        // ...but nothing alerts, because none of it was taken at rest.
+        XCTAssertTrue(events.isEmpty, "a drop while walking must not fire a live trigger")
+    }
+
+    func testGateResetsOnDisconnectSoStaleMovementDoesNotLinger() async {
+        let provider = MockProvider()
+        let motion = SimulatedMotionContextProvider()
+        let monitor = StrapMonitor(provider: provider, motion: motion)
+
+        provider.connect(UUID())
+        await settle()
+        motion.emit(.running, at: Date())
+        await settle()
+        provider.disconnect()
+        await settle()
+        XCTAssertEqual(monitor.motionState, .running)   // last seen value is kept for display
+        // But the monitor stopped classifying, so nothing is buffered.
+        XCTAssertEqual(monitor.bufferedBeats, 0)
+    }
+
     // MARK: mode
 
     func testSensorModeDefaultsToAppleWatchAndPersists() {

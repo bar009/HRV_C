@@ -34,6 +34,12 @@
          continuous monitoring. -->
     <key>NSBluetoothAlwaysUsageDescription</key>
     <string>האפליקציה מתחברת לרצועת דופק בלוטות' (כמו Polar H10) כדי לקרוא את המרווחים בין הפעימות ולחשב HRV בזמן אמת. החיבור הוא לבחירתך, והנתונים נשארים על המכשיר בלבד.</string>
+    <!-- Movement gating for chest-strap mode. A strap reports no workouts or
+         sleep, so without this the app cannot tell an HRV drop caused by
+         standing up from one caused by stress, and live alerts would misfire.
+         Only used while a strap is connected. -->
+    <key>NSMotionUsageDescription</key>
+    <string>האפליקציה בודקת אם אתה בתנועה כדי לא להתריע על ירידה ב-HRV שנגרמה מהליכה או מקימה, אלא רק על שינוי במנוחה. הנתונים נשארים על המכשיר בלבד.</string>
     <key>UIBackgroundModes</key>
     <array>
         <string>bluetooth-central</string>

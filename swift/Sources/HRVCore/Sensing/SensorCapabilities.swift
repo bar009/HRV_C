@@ -30,6 +30,10 @@ public struct SensorCapabilities: Sendable, Equatable {
     public var sleepContext: Bool
     public var workoutContext: Bool
     public var batteryReadout: Bool
+    /// Live movement classification, used to exclude windows that were not
+    /// taken at rest. Without it, continuous detection cannot tell a stress
+    /// drop from "you stood up and walked".
+    public var motionContext: Bool
 
     public init(rrFidelity: RRFidelity = .none,
                 continuousCoverage: Bool = false,
@@ -37,7 +41,8 @@ public struct SensorCapabilities: Sendable, Equatable {
                 restingHeartRate: Bool = false,
                 sleepContext: Bool = false,
                 workoutContext: Bool = false,
-                batteryReadout: Bool = false) {
+                batteryReadout: Bool = false,
+                motionContext: Bool = false) {
         self.rrFidelity = rrFidelity
         self.continuousCoverage = continuousCoverage
         self.passiveSDNN = passiveSDNN
@@ -45,6 +50,7 @@ public struct SensorCapabilities: Sendable, Equatable {
         self.sleepContext = sleepContext
         self.workoutContext = workoutContext
         self.batteryReadout = batteryReadout
+        self.motionContext = motionContext
     }
 }
 
