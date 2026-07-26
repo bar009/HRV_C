@@ -9,7 +9,8 @@ import SwiftData
 enum PrivacyStore {
     static let models: [any PersistentModel.Type] = [
         StoredSample.self, StoredBaseline.self, StoredAlert.self, StoredAnchor.self,
-        EventRecord.self, GuidedResponse.self, CoherenceSession.self
+        EventRecord.self, GuidedResponse.self, CoherenceSession.self,
+        PracticeSessionRecord.self, PracticePreferenceRecord.self
     ]
 
     static func makeContainer() throws -> ModelContainer {

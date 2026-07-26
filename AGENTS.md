@@ -47,7 +47,10 @@ Only a confirmed detector Alert may become the user-visible `attention` state.
 - Guided recognition must be optional, skippable, and calm.
 - Preserve user agency: the app offers a check-in, not an interpretation.
 - Local-first by default. Do not add a backend, cloud account, analytics SDK, or remote storage without explicit approval.
-- Coherence / active measurement is outside v1.
+- Active practice is part of the V1 target behind staged feature flags.
+- Only true RR input, led by Polar H10, may be labeled as coherence. A Watch
+  workout that supplies dense BPM may expose an explicitly estimated rhythm
+  metric, never RR or full coherence.
 
 ## Engineering rules
 

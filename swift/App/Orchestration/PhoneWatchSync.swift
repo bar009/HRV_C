@@ -11,9 +11,9 @@ final class PhoneWatchSync: NSObject, WCSessionDelegate {
     /// first refresh() usually runs before WCSession finishes activating.
     private var pendingContext: [String: Any]?
 
-    /// Track J: live beats streamed from the watch's workout session during a
-    /// coherence practice. Set by WatchWorkoutHeartRateSource.
-    var onCoherenceBeat: ((TimeInterval, Double) -> Void)?
+    /// Dense workout BPM samples. These are not RR intervals; callers may use
+    /// them for heart-rate display or an explicitly estimated rhythm metric.
+    var onPracticeHeartRate: ((TimeInterval, Double) -> Void)?
 
     override init() {
         super.init()
@@ -48,10 +48,10 @@ final class PhoneWatchSync: NSObject, WCSessionDelegate {
         DispatchQueue.main.async { self.sendPendingIfActivated() }
     }
     func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-        guard let beat = message["coherenceBeat"] as? [String: Any],
-              let t = beat["t"] as? TimeInterval,
-              let ibiMs = beat["ibiMs"] as? Double else { return }
-        DispatchQueue.main.async { self.onCoherenceBeat?(t, ibiMs) }
+        guard let sample = message["practiceHeartRate"] as? [String: Any],
+              let t = sample["t"] as? TimeInterval,
+              let bpm = sample["bpm"] as? Double else { return }
+        DispatchQueue.main.async { self.onPracticeHeartRate?(t, bpm) }
     }
 
     func sessionDidBecomeInactive(_ session: WCSession) {}

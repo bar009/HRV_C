@@ -34,9 +34,10 @@ def test_healthkit_entitlements_plist_is_valid() -> None:
     assert entitlements["com.apple.developer.healthkit.background-delivery"] is True
 
 
-def test_xcodegen_links_the_explicit_hrvcore_product_to_both_apps() -> None:
+def test_xcodegen_links_the_explicit_hrvcore_product_to_all_app_targets() -> None:
     project_spec = (SWIFT / "project.yml").read_text(encoding="utf-8")
 
-    assert project_spec.count("product: HRVCore") == 2
+    # HRV, the phone-only test host, and HRVWatch all consume the shared core.
+    assert project_spec.count("product: HRVCore") == 3
     assert "PRODUCT_BUNDLE_IDENTIFIER: com.bar009.hrvc" in project_spec
     assert "PRODUCT_BUNDLE_IDENTIFIER: com.bar009.hrvc.watchkitapp" in project_spec

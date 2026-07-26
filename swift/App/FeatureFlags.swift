@@ -1,15 +1,25 @@
-// Track J ships behind a flag: coherence is built now but kept OUT of the
-// first App Store submission (v1 = the validated passive app; coherence in
-// v1.1 after real-watch validation). When the flag is off, the practice tab
-// and its HealthKit needs don't exist.
+// Practice-engine capabilities open independently after their own device,
+// content, privacy and accessibility gates pass.
 import Foundation
 
 enum FeatureFlags {
-    /// Off for v1. A DEBUG launch arg (`-coherenceOn`) flips it for demo and
-    /// screenshots, mirroring the existing `-startTab` hooks.
+    static var practiceCatalogEnabled: Bool { enabled("practiceCatalog") }
+    static var practiceRunnerEnabled: Bool { enabled("practiceRunner") }
+    static var polarLiveMetricsEnabled: Bool { enabled("polarLiveMetrics") }
+    static var watchPracticeCompanionEnabled: Bool { enabled("watchPracticeCompanion") }
+    static var personalRecommendationsEnabled: Bool { enabled("personalRecommendations") }
+    static var personalCalibrationEnabled: Bool { enabled("personalCalibration") }
+    static var recordedGuidanceEnabled: Bool { enabled("recordedGuidance") }
+
+    // Compatibility name for the existing Track-J tab while PracticeScreen is
+    // replaced incrementally by the personal practice engine.
     static var coherenceEnabled: Bool {
+        practiceCatalogEnabled || enabled("coherence")
+    }
+
+    private static func enabled(_ name: String) -> Bool {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-coherenceOn") { return true }
+        if ProcessInfo.processInfo.arguments.contains("-\(name)On") { return true }
         #endif
         return false
     }
