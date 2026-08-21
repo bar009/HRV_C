@@ -58,4 +58,54 @@ public enum LayerAssets {
         "mouthLion": LayerAsset(file: "mouthLion.png", cropX: 398.00000000000000, cropY: 648.00000000000000, width: 186, height: 100),
         "mouthCheek": LayerAsset(file: "cheeks-hum.png", cropX: 264.00000000000000, cropY: 628.00000000000000, width: 430, height: 91),
     ]
+
+    /// 5 images, assetScale 1.
+    public static let greet: [String: LayerAsset] = [
+        "base": LayerAsset(file: "base.png", cropX: 71.000000000000000, cropY: 83.000000000000000, width: 822, height: 1155),
+        "lidSoft": LayerAsset(file: "eyes-soft.png", cropX: 272.00000000000000, cropY: 451.00000000000000, width: 406, height: 169),
+        "lidHalf": LayerAsset(file: "eyes-half-closed.png", cropX: 272.00000000000000, cropY: 451.00000000000000, width: 406, height: 169),
+        "lidMostly": LayerAsset(file: "eyes-mostly-closed.png", cropX: 272.00000000000000, cropY: 451.00000000000000, width: 406, height: 169),
+        "lidClosed": LayerAsset(file: "eyes-closed.png", cropX: 272.00000000000000, cropY: 451.00000000000000, width: 406, height: 169),
+    ]
+
+    /// 5 images, assetScale 1.
+    public static let celebrate: [String: LayerAsset] = [
+        "base": LayerAsset(file: "base.png", cropX: 86.000000000000000, cropY: 107.00000000000000, width: 802, height: 1124),
+        "lidSoft": LayerAsset(file: "eyes-soft.png", cropX: 264.00000000000000, cropY: 465.00000000000000, width: 416, height: 166),
+        "lidHalf": LayerAsset(file: "eyes-half-closed.png", cropX: 264.00000000000000, cropY: 465.00000000000000, width: 416, height: 166),
+        "lidMostly": LayerAsset(file: "eyes-mostly-closed.png", cropX: 264.00000000000000, cropY: 465.00000000000000, width: 416, height: 166),
+        "lidClosed": LayerAsset(file: "eyes-closed.png", cropX: 264.00000000000000, cropY: 465.00000000000000, width: 416, height: 166),
+    ]
+
+    /// 5 images, assetScale 1.
+    public static let demonstrate: [String: LayerAsset] = [
+        "base": LayerAsset(file: "base.png", cropX: 82.000000000000000, cropY: 97.000000000000000, width: 800, height: 1118),
+        "lidSoft": LayerAsset(file: "eyes-soft.png", cropX: 259.00000000000000, cropY: 465.00000000000000, width: 413, height: 170),
+        "lidHalf": LayerAsset(file: "eyes-half-closed.png", cropX: 259.00000000000000, cropY: 465.00000000000000, width: 413, height: 170),
+        "lidMostly": LayerAsset(file: "eyes-mostly-closed.png", cropX: 259.00000000000000, cropY: 465.00000000000000, width: 413, height: 170),
+        "lidClosed": LayerAsset(file: "eyes-closed.png", cropX: 259.00000000000000, cropY: 465.00000000000000, width: 413, height: 170),
+    ]
+
+    /// 5 images, assetScale 1.
+    public static let pause: [String: LayerAsset] = [
+        "base": LayerAsset(file: "base.png", cropX: 17.000000000000000, cropY: 44.000000000000000, width: 882, height: 1203),
+        "lidSoft": LayerAsset(file: "eyes-soft.png", cropX: 293.00000000000000, cropY: 401.00000000000000, width: 390, height: 239),
+        "lidHalf": LayerAsset(file: "eyes-half-closed.png", cropX: 293.00000000000000, cropY: 401.00000000000000, width: 390, height: 239),
+        "lidMostly": LayerAsset(file: "eyes-mostly-closed.png", cropX: 293.00000000000000, cropY: 401.00000000000000, width: 390, height: 239),
+        "lidClosed": LayerAsset(file: "eyes-closed.png", cropX: 293.00000000000000, cropY: 401.00000000000000, width: 390, height: 239),
+    ]
+
+    /// 1 images, assetScale 1.
+    public static let sleep: [String: LayerAsset] = [
+        "base": LayerAsset(file: "base.png", cropX: 7.0000000000000000, cropY: 233.00000000000000, width: 867, height: 905),
+    ]
+
+    /// 5 images, assetScale 1.
+    public static let demonstrateNostril: [String: LayerAsset] = [
+        "base": LayerAsset(file: "base.png", cropX: 99.000000000000000, cropY: 58.000000000000000, width: 795, height: 1171),
+        "lidSoft": LayerAsset(file: "eyes-soft.png", cropX: 263.00000000000000, cropY: 409.00000000000000, width: 417, height: 173),
+        "lidHalf": LayerAsset(file: "eyes-half-closed.png", cropX: 263.00000000000000, cropY: 409.00000000000000, width: 417, height: 173),
+        "lidMostly": LayerAsset(file: "eyes-mostly-closed.png", cropX: 263.00000000000000, cropY: 409.00000000000000, width: 417, height: 173),
+        "lidClosed": LayerAsset(file: "eyes-closed.png", cropX: 263.00000000000000, cropY: 409.00000000000000, width: 417, height: 173),
+    ]
 }

@@ -71,4 +71,60 @@ public enum PoseLayers {
         PoseLayer(id: "markerRibs", kind: .marker, parent: "ribs"),
         PoseLayer(id: "markerChest", kind: .marker, parent: "chest"),
     ]
+
+    /// 6 layers.
+    public static let greet: [PoseLayer] = [
+        PoseLayer(id: "root", kind: .root, region: .root, pivot: (578.00000000000000, 1396.0000000000000), scale: (-0.0040000000000000001, 0.020000000000000000)),
+        PoseLayer(id: "base", kind: .mascot),
+        PoseLayer(id: "lidSoft", kind: .lid, parent: "base", close: 0.25000000000000000),
+        PoseLayer(id: "lidHalf", kind: .lid, parent: "base", close: 0.55000000000000004),
+        PoseLayer(id: "lidMostly", kind: .lid, parent: "base", close: 0.80000000000000004),
+        PoseLayer(id: "lidClosed", kind: .lid, parent: "base", close: 1.0000000000000000),
+    ]
+
+    /// 6 layers.
+    public static let celebrate: [PoseLayer] = [
+        PoseLayer(id: "root", kind: .root, region: .root, pivot: (573.00000000000000, 1384.0000000000000), scale: (-0.0040000000000000001, 0.020000000000000000)),
+        PoseLayer(id: "base", kind: .mascot),
+        PoseLayer(id: "lidSoft", kind: .lid, parent: "base", close: 0.25000000000000000),
+        PoseLayer(id: "lidHalf", kind: .lid, parent: "base", close: 0.55000000000000004),
+        PoseLayer(id: "lidMostly", kind: .lid, parent: "base", close: 0.80000000000000004),
+        PoseLayer(id: "lidClosed", kind: .lid, parent: "base", close: 1.0000000000000000),
+    ]
+
+    /// 6 layers.
+    public static let demonstrate: [PoseLayer] = [
+        PoseLayer(id: "root", kind: .root, region: .root, pivot: (582.00000000000000, 1368.0000000000000), scale: (-0.0040000000000000001, 0.020000000000000000)),
+        PoseLayer(id: "base", kind: .mascot),
+        PoseLayer(id: "lidSoft", kind: .lid, parent: "base", close: 0.25000000000000000),
+        PoseLayer(id: "lidHalf", kind: .lid, parent: "base", close: 0.55000000000000004),
+        PoseLayer(id: "lidMostly", kind: .lid, parent: "base", close: 0.80000000000000004),
+        PoseLayer(id: "lidClosed", kind: .lid, parent: "base", close: 1.0000000000000000),
+    ]
+
+    /// 6 layers.
+    public static let pause: [PoseLayer] = [
+        PoseLayer(id: "root", kind: .root, region: .root, pivot: (596.00000000000000, 1412.0000000000000), scale: (-0.0040000000000000001, 0.020000000000000000)),
+        PoseLayer(id: "base", kind: .mascot),
+        PoseLayer(id: "lidSoft", kind: .lid, parent: "base", close: 0.25000000000000000),
+        PoseLayer(id: "lidHalf", kind: .lid, parent: "base", close: 0.55000000000000004),
+        PoseLayer(id: "lidMostly", kind: .lid, parent: "base", close: 0.80000000000000004),
+        PoseLayer(id: "lidClosed", kind: .lid, parent: "base", close: 1.0000000000000000),
+    ]
+
+    /// 2 layers.
+    public static let sleep: [PoseLayer] = [
+        PoseLayer(id: "root", kind: .root, region: .root, pivot: (498.00000000000000, 1258.0000000000000), scale: (-0.0040000000000000001, 0.020000000000000000)),
+        PoseLayer(id: "base", kind: .mascot),
+    ]
+
+    /// 6 layers.
+    public static let demonstrateNostril: [PoseLayer] = [
+        PoseLayer(id: "root", kind: .root, region: .root, pivot: (568.00000000000000, 1388.0000000000000), scale: (-0.0040000000000000001, 0.020000000000000000)),
+        PoseLayer(id: "base", kind: .mascot),
+        PoseLayer(id: "lidSoft", kind: .lid, parent: "base", close: 0.25000000000000000),
+        PoseLayer(id: "lidHalf", kind: .lid, parent: "base", close: 0.55000000000000004),
+        PoseLayer(id: "lidMostly", kind: .lid, parent: "base", close: 0.80000000000000004),
+        PoseLayer(id: "lidClosed", kind: .lid, parent: "base", close: 1.0000000000000000),
+    ]
 }
