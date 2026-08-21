@@ -28,6 +28,13 @@ public struct PoseLayer: Sendable {
     public let id: String
     public let kind: Kind
     public let region: BreathRegion?
+
+    /// The layer this one rides. The reference has two fields for it — `parent`
+    /// for a region nested inside another, `follows` for a face drawing carried
+    /// by the head — and they behave identically when folding a transform, so
+    /// they arrive merged. Anything without one hangs off the root.
+    public let parent: String?
+
     public let pivot: (x: Double, y: Double)?
     public let scale: (x: Double, y: Double)?
     public let translate: (x: Double, y: Double)?
@@ -51,6 +58,7 @@ public struct PoseLayer: Sendable {
     public init(id: String,
                 kind: Kind,
                 region: BreathRegion? = nil,
+                parent: String? = nil,
                 pivot: (x: Double, y: Double)? = nil,
                 scale: (x: Double, y: Double)? = nil,
                 translate: (x: Double, y: Double)? = nil,
@@ -63,6 +71,7 @@ public struct PoseLayer: Sendable {
         self.id = id
         self.kind = kind
         self.region = region
+        self.parent = parent
         self.pivot = pivot
         self.scale = scale
         self.translate = translate
